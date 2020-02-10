@@ -23,10 +23,11 @@ def main():
     camera_api = CameraApi()
 
     while True:
-        resp = camera_api.get_main_frame()
-        main_img = decode_image(resp["Content"])
-        cat_img = decode_image(camera_api.get_category_frame()["Content"])
-        obj_img = decode_image(camera_api.get_object_frame()["Content"])
+        resp = camera_api.get_frame()
+        images = resp["Content"]
+        main_img = decode_image(images["Main"])
+        cat_img = decode_image(images["Category"])
+        obj_img = decode_image(images["Object"])
 
         cv2.imshow("main", main_img)
         cv2.imshow("cat", cat_img)
