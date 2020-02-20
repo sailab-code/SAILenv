@@ -3,6 +3,7 @@ import time
 
 import numpy as np
 
+from Agent import Agent
 from api.CameraApi import CameraApi
 import cv2
 
@@ -14,43 +15,43 @@ except ImportError:
 frames = 1000
 
 
-def decode_image(b64_input):
-    np_arr = np.frombuffer(base64.b64decode(b64_input), np.uint8)
+def decode_image(np_arr):
     img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
     return img
 
-
-def main():
-    camera_api = CameraApi(object_frame_active=False, category_frame_active=True)
-
-    last_unity_time = 0
-    while True:
-        start_real_time = time.time()
-        start_unity_time = last_unity_time
-        resp = camera_api.get_frame()
-        images = resp["Content"]
-        main_img = decode_image(images["Main"])
-        cv2.imshow("main", main_img)
-
-        if camera_api.category_frame_active:
-            cat_img = decode_image(images["Category"])
-            cv2.imshow("cat", cat_img)
-
-        if camera_api.object_frame_active:
-            obj_img = decode_image(images["Object"])
-            cv2.imshow("obj", obj_img)
-
-        if camera_api.flow_frame_active:
-            flow_img = decode_image(images["Optical"])
-            cv2.imshow("flow", flow_img)
-
-        last_unity_time = resp["Content"]["Frame"]
-        key = cv2.waitKey(10)
-        print(f"real elapsed time: {time.time() - start_real_time}")
-        print(f"unity time: {last_unity_time} . elapsed: {last_unity_time - start_unity_time}")
-        if key == 27:  # ESC Pressed
-            return
-
-
 if __name__ == '__main__':
-    main()
+    agent = Agent(flow_frame_active=False)
+    agent.register()
+    last_unity_time = 0
+
+    try:
+        while True:
+            start_real_time = time.time()
+            start_unity_time = last_unity_time
+            frame = agent.get_frame()
+
+            if frame["main"] is not None:
+                main_img = decode_image(frame["main"])
+                cv2.imshow("main", main_img)
+
+            if frame["category"] is not None:
+                cat_img = decode_image(frame["category"])
+                cv2.imshow("cat", cat_img)
+
+            if frame["object"] is not None:
+                obj_img = decode_image(frame["object"])
+                cv2.imshow("object", obj_img)
+
+            if frame["flow"] is not None:
+                flow_img = decode_image(frame["flow"])
+                cv2.imshow("cat", flow_img)
+
+            # last_unity_time = resp["Content"]["Frame"]
+            key = cv2.waitKey(1)
+            print(f"real elapsed time: {time.time() - start_real_time}")
+            # print(f"unity time: {last_unity_time} . elapsed: {last_unity_time - start_unity_time}")
+            if key == 27:  # ESC Pressed
+                break
+    finally:
+        print(f"Closing agent {agent.id}")
+        agent.dispose()
