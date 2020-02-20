@@ -14,3 +14,5 @@ from .api import Api
 from .api import Method
 from .agent_api import AgentApi
 from .simulation_api import SimulationApi
+
+from .agent import Agent

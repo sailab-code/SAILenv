@@ -37,22 +37,21 @@ class Agent:
 
     def register(self):
         """
-        TODO: summary
-        :return:
+        Register the agent on the Unity server and set its id.
         """
         self.id = self.api.register()["Content"]
 
-    def dispose(self):
+    def delete(self):
         """
-        TODO: summary
-        :return:
+        Delete the agent on the Unity server.
         """
         self.api.delete(self.id)
 
     def get_frame(self):
         """
-        TODO: summary
-        :return:
+        Get the frame from the cameras on the Unity server.
+
+        :return: a dict of frames indexed by keywords main, object, category and flow.
         """
         response = self.api.get_frame(self.id,
                                       self.main_frame_active,
@@ -82,18 +81,18 @@ class Agent:
             frame["category"] = None
 
         if self.flow_frame_active:
-            frame["flow"] = self.__decode_image(base64_images["Flow"])
+            frame["flow"] = self.__decode_image(base64_images["Optical"])
         else:
             frame["flow"] = None
 
         return frame
 
     @staticmethod
-    def __decode_image(b64_input):
+    def __decode_image(b64_input) -> np.ndarray:
         """
-        TODO: summary
-        :param b64_input:
-        :return:
+        Decode an image from the given base64 representation to a numpy array.
+
+        :param b64_input: the base64 representation of an image
+        :return: the numpy array representation of an image
         """
-        img = np.frombuffer(base64.b64decode(b64_input), np.uint8)
-        return img
+        return np.frombuffer(base64.b64decode(b64_input), np.uint8)

@@ -78,7 +78,7 @@ class AgentApi(Api):
 
     def register(self):
         """
-        TODO: summary ????? Don't we require an agent id?
+        Register the agent on the Unity server and assign an id to it.
 
         :return: a json response to the POST call
         """
@@ -86,7 +86,7 @@ class AgentApi(Api):
 
     def delete(self, agent_id: int):
         """
-        TODO: summary
+        Delete the given agent id on the Unity server.
 
         :param agent_id: the id of the agent
         :return: a json response to the POST call

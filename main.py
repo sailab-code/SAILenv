@@ -20,7 +20,7 @@ except ImportError:
 
 # Import src
 
-from agent import Agent
+from client import Agent
 
 frames: int = 1000
 
@@ -28,11 +28,12 @@ frames: int = 1000
 def decode_image(array: np.ndarray):
     """
     Decode the given numpy array with OpenCV.
+
     :param array: the numpy array to decode
-    :return: the decode image that can be displayed
+    :return: the decoded image that can be displayed
     """
-    img = cv2.imdecode(array, cv2.IMREAD_COLOR)
-    return img
+    image = cv2.imdecode(array, cv2.IMREAD_COLOR)
+    return image
 
 
 if __name__ == '__main__':
@@ -71,4 +72,4 @@ if __name__ == '__main__':
                 break
     finally:
         print(f"Closing agent {agent.id}")
-        agent.dispose()
+        agent.delete()
