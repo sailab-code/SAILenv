@@ -20,7 +20,7 @@ def decode_image(np_arr):
     return img
 
 if __name__ == '__main__':
-    agent = Agent(flow_frame_active=False)
+    agent = Agent(flow_frame_active=True)
     agent.register()
     last_unity_time = 0
 
@@ -44,7 +44,7 @@ if __name__ == '__main__':
 
             if frame["flow"] is not None:
                 flow_img = decode_image(frame["flow"])
-                cv2.imshow("cat", flow_img)
+                cv2.imshow("flow", flow_img)
 
             # last_unity_time = resp["Content"]["Frame"]
             key = cv2.waitKey(1)

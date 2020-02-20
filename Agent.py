@@ -65,7 +65,7 @@ class Agent:
             frame["category"] = None
 
         if self.flow_frame_active:
-            frame["flow"] = self.__decode_image(base64_images["Flow"])
+            frame["flow"] = self.__decode_image(base64_images["Optical"])
         else:
             frame["flow"] = None
 
