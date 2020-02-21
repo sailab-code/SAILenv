@@ -76,13 +76,21 @@ class AgentApi(Api):
         """
         return self.call(f"{agent_id}/transform", Method.GET)
 
-    def register(self):
+    def register(self, width: int = 512, height: int = 384):
         """
         Register the agent on the Unity server and assign an id to it.
 
+        :parameter width: width of the frames that will be received with get_frame()
+        :parameter height: height of the frames that will be received with get_frame()
         :return: a json response to the POST call
         """
-        return self.call("register", Method.POST)
+
+        params = {
+            "Width": width,
+            "Height": height
+        }
+
+        return self.call("register", Method.POST, data=params)
 
     def delete(self, agent_id: int):
         """

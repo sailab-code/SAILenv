@@ -54,7 +54,7 @@ class Api:
         :param data: a dictionary of data
         :return: the json of the response
         """
-        response = post(self.__get_full_url(endpoint), data=data, headers=self.headers)
+        response = post(self.__get_full_url(endpoint), json=data, headers=self.headers)
         return response.json()
 
     def __get_full_url(self, endpoint: str) -> str:

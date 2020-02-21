@@ -35,11 +35,11 @@ class Agent:
         self.api: AgentApi = AgentApi()
         self.id: int = -1
 
-    def register(self):
+    def register(self, width: int = 512, height: int = 384):
         """
         Register the agent on the Unity server and set its id.
         """
-        self.id = self.api.register()["Content"]
+        self.id = self.api.register(width=width, height=height)["Content"]
 
     def delete(self):
         """

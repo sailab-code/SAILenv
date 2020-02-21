@@ -40,7 +40,7 @@ if __name__ == '__main__':
     print("Generating agent...")
     agent = Agent(flow_frame_active=True)
     print("Registering agent on server...")
-    agent.register()
+    agent.register(width=100, height=75)
     print(f"Agent registered with ID: {agent.id}")
     last_unity_time: float = 0.0
     try:
