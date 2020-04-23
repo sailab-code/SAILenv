@@ -1,56 +1,75 @@
-import base64
+#
+# Copyright (C) 2020 Enrico Meloni, Luca Pasqualini
+# University of Siena - Artificial Intelligence Laboratory - SAILab
+#
+#
+# L2S is licensed under a MIT license.
+#
+# You should have received a copy of the license along with this
+# work. If not, see <https://en.wikipedia.org/wiki/MIT_License>.
+
+
+# Import packages
+
 import time
-
 import numpy as np
-
-from api.CameraApi import CameraApi
-import cv2
-
 try:
     from cv2 import cv2
 except ImportError:
-    pass
+    import cv2
 
-frames = 1000
+# Import src
 
+from client import Agent
 
-def decode_image(b64_input):
-    np_arr = np.frombuffer(base64.b64decode(b64_input), np.uint8)
-    img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-    return img
+frames: int = 1000
 
 
-def main():
-    camera_api = CameraApi(object_frame_active=False, category_frame_active=True)
+def decode_image(array: np.ndarray):
+    """
+    Decode the given numpy array with OpenCV.
 
-    last_unity_time = 0
-    while True:
-        start_real_time = time.time()
-        start_unity_time = last_unity_time
-        resp = camera_api.get_frame()
-        images = resp["Content"]
-        main_img = decode_image(images["Main"])
-        cv2.imshow("main", main_img)
-
-        if camera_api.category_frame_active:
-            cat_img = decode_image(images["Category"])
-            cv2.imshow("cat", cat_img)
-
-        if camera_api.object_frame_active:
-            obj_img = decode_image(images["Object"])
-            cv2.imshow("obj", obj_img)
-
-        if camera_api.flow_frame_active:
-            flow_img = decode_image(images["Optical"])
-            cv2.imshow("flow", flow_img)
-
-        last_unity_time = resp["Content"]["Frame"]
-        key = cv2.waitKey(10)
-        print(f"real elapsed time: {time.time() - start_real_time}")
-        print(f"unity time: {last_unity_time} . elapsed: {last_unity_time - start_unity_time}")
-        if key == 27:  # ESC Pressed
-            return
+    :param array: the numpy array to decode
+    :return: the decoded image that can be displayed
+    """
+    image = cv2.imdecode(array, cv2.IMREAD_COLOR)
+    return image
 
 
 if __name__ == '__main__':
-    main()
+    print("Generating agent...")
+    agent = Agent(flow_frame_active=True)
+    print("Registering agent on server...")
+    agent.register(width=100, height=75)
+    print(f"Agent registered with ID: {agent.id}")
+    last_unity_time: float = 0.0
+    try:
+        print("Press ESC to close")
+        while True:
+            start_real_time = time.time()
+            start_unity_time = last_unity_time
+            frame = agent.get_frame()
+
+            if frame["main"] is not None:
+                main_img = decode_image(frame["main"])
+                cv2.imshow("PBR", main_img)
+
+            if frame["category"] is not None:
+                cat_img = decode_image(frame["category"])
+                cv2.imshow("Category ID", cat_img)
+
+            if frame["object"] is not None:
+                obj_img = decode_image(frame["object"])
+                cv2.imshow("Object ID", obj_img)
+
+            if frame["flow"] is not None:
+                flow_img = decode_image(frame["flow"])
+                cv2.imshow("Optical Flow", flow_img)
+
+            key = cv2.waitKey(1)
+            print(f"Real elapsed time: {time.time() - start_real_time}")
+            if key == 27:  # ESC Pressed
+                break
+    finally:
+        print(f"Closing agent {agent.id}")
+        agent.delete()
