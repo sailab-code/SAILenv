@@ -53,8 +53,9 @@ class SocketAgent:
         :param flow_frame_active: True if the virtual world should generate optical flow data
         :param host: address on which the unity virtual world is listening
         :param port: port on which the unity virtual world is listening
-        :param width: width of the stream, should be multiple of 8
-        :param height: height of the stream, should be multiple of 8
+        :param width: width of the stream
+        :param height: height of the stream
+        :param gzip: true if the virtual world should compress the views with gzip
         """
         self.flow_frame_active: bool = flow_frame_active
         self.category_frame_active: bool = category_frame_active
@@ -74,26 +75,35 @@ class SocketAgent:
         self.port = port
         self.width = width
         self.height = height
+
+        # creates a TCP socket over IPv4
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        self.endianness = 'little'
         self.gzip = gzip
+
+        # numbers are sent as little endian. TODO: check if this is also true on linux or just windows.
+        self.endianness = 'little'
 
     def register(self):
         """
         Register the agent on the Unity server and set its id.
         """
+
+        #connect to the unity socket
         self.socket.connect((self.host, self.port))
+
+        # convert the resolution to bytes and send it over the socket
         resolution_bytes = self.width.to_bytes(4, self.endianness) + \
                            self.height.to_bytes(4,self.endianness)
         self.socket.send(resolution_bytes)
+
+        # send gzip option
         gzip_byte = b"\x01" if self.gzip else b"\x00"
         self.socket.send(gzip_byte)
 
+        # receive the agent id
         agent_id_size = 4  # sizeof(int) in unity (c#)
-        received = 0
-        data = b""
-        data += self.socket.recv(4)
+        data = self.receive_bytes(agent_id_size)
 
         self.id = int.from_bytes(data, self.endianness)
 
@@ -107,11 +117,16 @@ class SocketAgent:
         """
         Get the frame from the cameras on the Unity server.
 
-        :return: a dict of frames indexed by keywords main, object, category and flow.
+        :return: a dict of frames indexed by keys main, object, category, flow, depth. \
+                 It has also a "sizes" key containing the size in byte of the received frame. (Different from the
+                 actual size of the frame when gzip compression is enabled.
         """
-        frame = {}
-        frame["sizes"] = {}
+        # initialize the frame dictionary
+        frame = {"sizes": {}}
+
+        # encodes the flags in a single byte
         flags_bytes = self.flags.to_bytes(1, self.endianness)
+        # adds the FRAME request byte.
         request_bytes = b'\x00' + flags_bytes
 
         self.socket.send(request_bytes)
@@ -119,8 +134,9 @@ class SocketAgent:
         # start reading images from socket in the following order:
         # main, category, object, optical flow, depth
         if self.main_frame_active:
-            frame_bytes, received = self.receive_frame()
+            frame_bytes, received = self.receive_next_frame_view()
 
+            # main is a png image, so it can be read with cv2
             frame["main"] = cv2.imdecode(self.__decode_image(frame_bytes), cv2.IMREAD_COLOR)
             frame["sizes"]["main"] = received
         else:
@@ -128,7 +144,7 @@ class SocketAgent:
             frame["main"] = None
 
         if self.category_frame_active:
-            frame_bytes, received = self.receive_frame()
+            frame_bytes, received = self.receive_next_frame_view()
 
             cat_frame = self.__decode_category(frame_bytes)
             cat_frame = np.reshape(cat_frame, (self.height, self.width, 3))
@@ -142,15 +158,15 @@ class SocketAgent:
             # frame["category_debug"] = None
 
         if self.object_frame_active:
-            frame_bytes, received = self.receive_frame()
-            frame["object"] = self.__decode_image(frame_bytes)  # TODO: probably wrong format in unity
+            frame_bytes, received = self.receive_next_frame_view()
+            frame["object"] = self.__decode_image(frame_bytes)
             frame["sizes"]["object"] = received
         else:
             frame["sizes"]["object"] = 0
             frame["object"] = None
 
         if self.flow_frame_active:
-            frame_bytes, received = self.receive_frame()
+            frame_bytes, received = self.receive_next_frame_view()
             flow = self.__decode_image(frame_bytes, np.float32)
             frame["flow"] = self.__decode_flow(flow)
             frame["sizes"]["flow"] = received
@@ -159,38 +175,54 @@ class SocketAgent:
             frame["flow"] = None
 
         if self.depth_frame_active:
-            frame_bytes, received = self.receive_frame()
+            frame_bytes, received = self.receive_next_frame_view()
             frame["depth"] = cv2.imdecode(self.__decode_image(frame_bytes), cv2.IMREAD_COLOR)
             frame["sizes"]["depth"] = received
         else:
             frame["sizes"]["depth"] = 0
             frame["depth"] = None
 
-        # if "Timings" in content:
-        #    # Convert elapsed milliseconds to seconds
-        #    frame["timings"] = {key: (value / 1000) for key, value in content["Timings"].items()}
-        #    frame["timings"]["Http"] = total_seconds
-
         return frame
 
-    def receive_frame(self):
-        frame_length = int.from_bytes(self.socket.recv(4), self.endianness)  # first we read the length of the frame
+    def receive_bytes(self, n_bytes):
+        """
+        Receives exactly n_bytes from the socket
+
+        :param n_bytes: Number of bytes that should be received from the socket.
+
+        :return an array of n_bytes bytes.
+        """
         received = 0
-        frame_bytes = b''
-        while received < frame_length:
-            chunk = self.socket.recv(frame_length - received)
+        bytes = b''
+        while received < n_bytes:
+            chunk = self.socket.recv(n_bytes - received)
             received += len(chunk)
-            frame_bytes += chunk
+            bytes += chunk
+        return bytes
+
+    def receive_next_frame_view(self):
+        """
+        Receives the next frame from the socket.
+
+        :return: a byte array containing the encoded frame view.
+        """
+        frame_length = int.from_bytes(self.socket.recv(4), self.endianness)  # first we read the length of the frame
+        frame_bytes = self.receive_bytes(frame_length)
 
         if self.gzip:
             try:
-                return gzip.decompress(frame_bytes), received
+                return gzip.decompress(frame_bytes), frame_length
             except:
                 print("Error decompressing gzip frame: is gzip enabled on the server?")
         else:
-            return frame_bytes, received
+            return frame_bytes, frame_length
 
     def get_categories(self):
+        """
+        Gets the categories list from the socket
+        TODO: must be implemented on Unity side.
+        :return:
+        """
         return []
         # content = self.sim_api.get_categories()
         # categories = {}
@@ -224,8 +256,17 @@ class SocketAgent:
         return cat_frame
 
     def __decode_flow(self, flow_frame: np.ndarray) -> np.ndarray:
+        """
+        Decodes the flow frame.
+        :param flow_frame: frame obtained by unity. It is a float32 array.
+        :return: Decoded flow frame
+        """
         flow = flow_frame
+
+        # must be flipped upside down, because Unity returns it from bottom to top.
         flow = np.reshape(flow, (self.height, self.width, -1))
         flow = np.flipud(flow)
+
+        # restore it as contiguous array, as flipud breaks the contiguity
         flow = np.ascontiguousarray(flow)
         return flow

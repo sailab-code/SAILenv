@@ -1,6 +1,5 @@
 import numpy as np
-import cv2
-from agent import Agent
+from http.agent import Agent
 import time
 import matplotlib.pyplot as plt
 from scipy.stats import sem, t

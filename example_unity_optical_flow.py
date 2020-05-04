@@ -1,13 +1,14 @@
 import numpy as np
 import cv2
-from agent import Agent
+#from http.agent import Agent
+from socket_agent import SocketAgent
 import time
 
 
 if __name__ == "__main__":
     print("Generating agent...")
-    agent = Agent(flow_frame_active=True, object_frame_active=False, main_frame_active=True,
-                  category_frame_active=False, width=200, height=150, host="127.0.0.1", port=8081)
+    agent = SocketAgent(flow_frame_active=True, object_frame_active=False, main_frame_active=True,
+                  category_frame_active=False, width=200, height=150, host="127.0.0.1", port=8085)
     print("Registering agent on server...")
     agent.register()
     print(f"Agent registered with ID: {agent.id}")
