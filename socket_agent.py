@@ -29,6 +29,9 @@ class FrameFlags(IntFlag):
 
 
 class SocketAgent:
+
+    sizeof_int = 4 # sizeof_int in C#
+
     """
     TODO: summary ??? Maybe some more check to avoid connection errors?
 
@@ -88,24 +91,52 @@ class SocketAgent:
         """
         Register the agent on the Unity server and set its id.
         """
-
         #connect to the unity socket
         self.socket.connect((self.host, self.port))
+        self.__send_resolution()
+        self.__send_gzip_setting()
+        self.__receive_agent_id()
 
-        # convert the resolution to bytes and send it over the socket
+
+    def __send_resolution(self):
+        """
+        convert the resolution to bytes and send it over the socket
+        """
         resolution_bytes = self.width.to_bytes(4, self.endianness) + \
-                           self.height.to_bytes(4,self.endianness)
+                           self.height.to_bytes(4, self.endianness)
         self.socket.send(resolution_bytes)
 
-        # send gzip option
+    def __send_gzip_setting(self):
+        """
+        send gzip option
+        """
         gzip_byte = b"\x01" if self.gzip else b"\x00"
         self.socket.send(gzip_byte)
 
-        # receive the agent id
-        agent_id_size = 4  # sizeof(int) in unity (c#)
-        data = self.receive_bytes(agent_id_size)
+    def __receive_int(self):
+        """
+        Receives an integer
+        :return: the received integer
+        """
+        data = self.receive_bytes(self.sizeof_int)
+        return int.from_bytes(data, self.endianness)
 
-        self.id = int.from_bytes(data, self.endianness)
+    def __receive_agent_id(self):
+        """
+        receives agent id
+        """
+        self.id = self.__receive_int()
+
+    def __receive_string(self, str_format = "utf-8"):
+        """
+        receives a string
+        :return: the received string
+        """
+
+        string_size = self.__receive_int()
+        data = self.receive_bytes(string_size)
+        return data.decode(str_format)
+
 
     def delete(self):
         """
