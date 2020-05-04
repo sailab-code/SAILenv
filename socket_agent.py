@@ -96,7 +96,9 @@ class SocketAgent:
         self.__send_resolution()
         self.__send_gzip_setting()
         self.__receive_agent_id()
+        self.__receive_categories()
 
+        print(self.categories)
 
     def __send_resolution(self):
         """
@@ -137,6 +139,20 @@ class SocketAgent:
         data = self.receive_bytes(string_size)
         return data.decode(str_format)
 
+    def __receive_categories(self):
+        """
+        receives a list of available categories (name, id)
+        :return:
+        """
+        categories_number = self.__receive_int()
+        categories = dict()
+
+        for i in range(categories_number):
+            cat_id = self.__receive_int()
+            cat_name = self.__receive_string()
+            categories[cat_id] = cat_name
+
+        self.categories = categories
 
     def delete(self):
         """
@@ -254,13 +270,7 @@ class SocketAgent:
         TODO: must be implemented on Unity side.
         :return:
         """
-        return []
-        # content = self.sim_api.get_categories()
-        # categories = {}
-        # for cat in content:
-        #   categories[cat["Name"]] = cat["Id"]
-
-        # return categories
+        return self.categories
 
     @staticmethod
     def __decode_image(bytes, dtype=np.uint8) -> np.ndarray:
