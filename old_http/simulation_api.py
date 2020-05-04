@@ -8,7 +8,7 @@
 # You should have received a copy of the license along with this
 # work. If not, see <https://en.wikipedia.org/wiki/MIT_License>.
 
-from http.api import Api, Method
+from old_http.api import Api, Method
 
 
 class SimulationApi(Api):

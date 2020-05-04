@@ -10,7 +10,7 @@
 
 # Import src
 
-from http.api import Api, Method
+from old_http.api import Api, Method
 
 class AgentApi(Api):
     """

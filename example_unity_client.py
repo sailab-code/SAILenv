@@ -18,7 +18,7 @@ import colorsys
 
 # Import src
 
-from http.agent import Agent
+from old_http.agent import Agent
 
 frames: int = 1000
 

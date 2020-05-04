@@ -1,5 +1,5 @@
 import numpy as np
-from http.agent import Agent
+from old_http.agent import Agent
 import time
 import matplotlib.pyplot as plt
 from scipy.stats import sem, t
@@ -148,7 +148,7 @@ if __name__ == "__main__":
     d = plt.figure(4)
     plt.ylabel("HTTP Overhead vs Frame generation")
     data_list, ci_list = get_data_and_ci(http_data)
-    plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label="http overhead")
+    plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label="old_http overhead")
     data_list, ci_list = get_data_and_ci(total_data)
     plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label="frame generation")
     plt.legend(loc='upper left')

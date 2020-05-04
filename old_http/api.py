@@ -63,7 +63,7 @@ class Api:
 
         :return: the full URL as string
         """
-        base_url = f"http://{self.host}:{self.port}"
+        base_url = f"old_http://{self.host}:{self.port}"
 
         if self.api_prefix is not None:
             base_url += f"/{self.api_prefix}"

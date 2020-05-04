@@ -12,8 +12,8 @@
 
 import base64
 import numpy as np
-from http.agent_api import AgentApi
-from http.simulation_api import SimulationApi
+from old_http.agent_api import AgentApi
+from old_http.simulation_api import SimulationApi
 import cv2
 
 
