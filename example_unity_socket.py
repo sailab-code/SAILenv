@@ -14,7 +14,6 @@
 import time
 import numpy as np
 import cv2
-import colorsys
 
 # Import src
 
@@ -33,18 +32,30 @@ def decode_image(array: np.ndarray):
     image = cv2.imdecode(array, cv2.IMREAD_COLOR)
     return image
 
+#host = "bronte.diism.unisi.it"
+host = "127.0.0.1"
+#host = "eliza.diism.unisi.it"
+
 
 if __name__ == '__main__':
     print("Generating agent...")
-    agent = Agent(depth_frame_active=True,
+    agent = Agent(depth_frame_active=False,
                   flow_frame_active=False,
-                  object_frame_active=True,
+                  object_frame_active=False,
                   main_frame_active=True,
-                  category_frame_active=True, width=256, height=192, host="127.0.0.1", port=8085, gzip=False)
+                  category_frame_active=False, width=256, height=192, host=host, port=8100, gzip=False)
     print("Registering agent on server...")
     agent.register()
     print(f"Agent registered with ID: {agent.id}")
     last_unity_time: float = 0.0
+
+    print(f"Available categories: {agent.categories}")
+    print(f"Available scenes: {agent.scenes}")
+
+    scene = agent.scenes[1]
+    print(f"Changing scene to {scene}")
+    agent.change_scene(scene)
+
     # print(agent.get_resolution())
     try:
         print("Press ESC to close")

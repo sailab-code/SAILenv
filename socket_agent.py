@@ -13,7 +13,7 @@
 import numpy as np
 import cv2
 import socket
-from enum import IntFlag
+from enum import IntFlag, IntEnum
 import gzip
 
 
@@ -27,6 +27,11 @@ class FrameFlags(IntFlag):
     OPTICAL = 1 << 4
     DEPTH = 1 << 5
 
+
+class CommandsBytes:
+    FRAME = b"\x00"
+    DELETE = b"\x01"
+    CHANGE_SCENE = b"\x02"
 
 class SocketAgent:
 
@@ -97,8 +102,7 @@ class SocketAgent:
         self.__send_gzip_setting()
         self.__receive_agent_id()
         self.__receive_categories()
-
-        print(self.categories)
+        self.__receive_scenes()
 
     def __send_resolution(self):
         """
@@ -129,7 +133,7 @@ class SocketAgent:
         """
         self.id = self.__receive_int()
 
-    def __receive_string(self, str_format = "utf-8"):
+    def __receive_string(self, str_format="utf-8"):
         """
         receives a string
         :return: the received string
@@ -138,6 +142,18 @@ class SocketAgent:
         string_size = self.__receive_int()
         data = self.receive_bytes(string_size)
         return data.decode(str_format)
+
+    def __send_string(self, string: str, str_format="utf-8"):
+        """
+        sends a string
+        :param str_format:
+        :return:
+        """
+
+        string_size = len(string)
+        self.socket.send(string_size.to_bytes(4, self.endianness))
+        data = string.encode(str_format)
+        self.socket.send(data)
 
     def __receive_categories(self):
         """
@@ -154,11 +170,25 @@ class SocketAgent:
 
         self.categories = categories
 
+    def __receive_scenes(self):
+        """
+        receives a list of available scene names
+        """
+
+        scenes_number = self.__receive_int()
+        scenes = list()
+
+        for i in range(scenes_number):
+            scenes_name = self.__receive_string()
+            scenes.append(scenes_name)
+
+        self.scenes = scenes
+
     def delete(self):
         """
         Delete the agent on the Unity server.
         """
-        self.socket.send(b'\x01')  # x01 is the code unity expects for deleting an agent
+        self.socket.send(CommandsBytes.DELETE)  # x01 is the code unity expects for deleting an agent
 
     def get_frame(self):
         """
@@ -174,7 +204,7 @@ class SocketAgent:
         # encodes the flags in a single byte
         flags_bytes = self.flags.to_bytes(1, self.endianness)
         # adds the FRAME request byte.
-        request_bytes = b'\x00' + flags_bytes
+        request_bytes = CommandsBytes.FRAME + flags_bytes
 
         self.socket.send(request_bytes)
 
@@ -230,6 +260,16 @@ class SocketAgent:
             frame["depth"] = None
 
         return frame
+
+    def change_scene(self, scene_name):
+        request_bytes = CommandsBytes.CHANGE_SCENE
+        self.socket.send(request_bytes)
+        self.__send_string(scene_name)
+
+        result = self.__receive_string()
+        if result != "ok":
+            print(f"Cannot change scene! error = {result}")
+
 
     def receive_bytes(self, n_bytes):
         """
