@@ -1,4 +1,4 @@
 .idea/
 **/__pycache__/
 SAILaB LVE Windows/
-docker-env/
+docker-env/dev/build

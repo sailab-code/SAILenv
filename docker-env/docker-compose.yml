@@ -1,0 +1,10 @@
+version: '3.4'
+
+services:
+    lve-dev:
+        build: ./dev
+        image: lve-dev
+        command: ["systemd"]
+        ports:
+            - "8100:8085"
+            - "3389:3389"
