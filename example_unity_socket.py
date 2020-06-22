@@ -14,6 +14,7 @@
 import time
 import numpy as np
 import cv2
+from random import randint
 
 # Import src
 
@@ -43,18 +44,20 @@ if __name__ == '__main__':
                   flow_frame_active=False,
                   object_frame_active=False,
                   main_frame_active=True,
-                  category_frame_active=False, width=256, height=192, host=host, port=8100, gzip=False)
+                  category_frame_active=True, width=256, height=192, host=host, port=8085, gzip=False)
     print("Registering agent on server...")
     agent.register()
     print(f"Agent registered with ID: {agent.id}")
     last_unity_time: float = 0.0
 
-    print(f"Available categories: {agent.categories}")
     print(f"Available scenes: {agent.scenes}")
 
     scene = agent.scenes[1]
     print(f"Changing scene to {scene}")
     agent.change_scene(scene)
+
+    print(f"Available categories: {agent.categories}")
+
 
     # print(agent.get_resolution())
     try:
@@ -75,15 +78,13 @@ if __name__ == '__main__':
 
             if frame["category"] is not None:
                 cat_img = np.ndarray((agent.height * agent.width, 3), dtype=np.uint8)
-                for idx, sup in enumerate(frame["category"]):
-                    if sup == 0:
-                        cat_img[idx] = [0, 0, 255]
-                    elif sup == 1:
-                        cat_img[idx] = [255, 0, 0]
-                    elif sup == 2:
-                        cat_img[idx] = [0, 255, 0]
-                    else:
-                        cat_img[idx] = [0, 0, 0]
+
+                try:
+                    print(frame["category"][0])
+                    for idx, sup in enumerate(frame["category"]):
+                        cat_img[idx] = agent.cat_colors[sup]
+                except KeyError:
+                    print("key error on category get")
 
                 cat_img = np.reshape(cat_img, (agent.height, agent.width, 3))
 
@@ -115,4 +116,4 @@ if __name__ == '__main__':
                 break
     finally:
         print(f"Closing agent {agent.id}")
-        #agent.delete()
+        agent.delete()

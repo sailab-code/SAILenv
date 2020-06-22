@@ -9,6 +9,7 @@
 # work. If not, see <https://en.wikipedia.org/wiki/MIT_License>.
 
 # Import packages
+from random import randint
 
 import numpy as np
 import cv2
@@ -32,6 +33,7 @@ class CommandsBytes:
     FRAME = b"\x00"
     DELETE = b"\x01"
     CHANGE_SCENE = b"\x02"
+    GET_CATEGORIES = b"\x03"
 
 class SocketAgent:
 
@@ -101,7 +103,6 @@ class SocketAgent:
         self.__send_resolution()
         self.__send_gzip_setting()
         self.__receive_agent_id()
-        self.__receive_categories()
         self.__receive_scenes()
 
     def __send_resolution(self):
@@ -157,18 +158,27 @@ class SocketAgent:
 
     def __receive_categories(self):
         """
-        receives a list of available categories (name, id)
+        sends a get categories command and receives a list of available categories (name, id)
         :return:
         """
+        self.__send_get_categories()
+
         categories_number = self.__receive_int()
         categories = dict()
+        colors = dict()
 
         for i in range(categories_number):
             cat_id = self.__receive_int()
             cat_name = self.__receive_string()
             categories[cat_id] = cat_name
+            colors[cat_id] = [
+                randint(0, 255),
+                randint(0, 255),
+                randint(0, 255)
+            ]
 
         self.categories = categories
+        self.cat_colors = colors
 
     def __receive_scenes(self):
         """
@@ -269,7 +279,13 @@ class SocketAgent:
         result = self.__receive_string()
         if result != "ok":
             print(f"Cannot change scene! error = {result}")
+            return
 
+        self.__receive_categories()
+
+    def __send_get_categories(self):
+        request_bytes = CommandsBytes.GET_CATEGORIES
+        self.socket.send(request_bytes)
 
     def receive_bytes(self, n_bytes):
         """
