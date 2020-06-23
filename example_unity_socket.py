@@ -79,12 +79,13 @@ if __name__ == '__main__':
             if frame["category"] is not None:
                 cat_img = np.ndarray((agent.height * agent.width, 3), dtype=np.uint8)
 
-                try:
-                    print(frame["category"][0])
-                    for idx, sup in enumerate(frame["category"]):
-                        cat_img[idx] = agent.cat_colors[sup]
-                except KeyError:
-                    print("key error on category get")
+                for idx, sup in enumerate(frame["category"]):
+                    try:
+                        color = agent.cat_colors[sup]
+                        cat_img[idx] = color
+                    except KeyError:
+                        #print(f"key error on color get: {sup}")
+                        cat_img[idx] = [0,0,0]
 
                 cat_img = np.reshape(cat_img, (agent.height, agent.width, 3))
 
