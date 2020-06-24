@@ -33,6 +33,31 @@ def decode_image(array: np.ndarray):
     image = cv2.imdecode(array, cv2.IMREAD_COLOR)
     return image
 
+
+def draw_flow_lines(frame, optical_flow, line_step=16, line_color=(0, 255, 0)):
+        frame_with_lines = frame.copy()
+        line_color = (line_color[2], line_color[1], line_color[0])
+
+        for y in range(0, optical_flow.shape[0], line_step):
+            for x in range(0, optical_flow.shape[1], line_step):
+                fx, fy = optical_flow[y, x]
+                cv2.line(frame_with_lines, (x, y), (int(x + fx), int(y + fy)), line_color)
+                cv2.circle(frame_with_lines, (x, y), 1, line_color, -1)
+
+        return frame_with_lines
+
+
+def draw_flow_map(optical_flow):
+        hsv = np.zeros((optical_flow.shape[0], optical_flow.shape[1], 3), dtype=np.float32)
+        hsv[..., 1] = 255
+
+        mag, ang = cv2.cartToPolar(optical_flow[..., 0], optical_flow[..., 1])
+        hsv[..., 0] = ang * 180 / np.pi / 2
+        hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+        frame_flow_map = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+
+        return frame_flow_map
+
 #host = "bronte.diism.unisi.it"
 host = "127.0.0.1"
 #host = "eliza.diism.unisi.it"
@@ -40,8 +65,8 @@ host = "127.0.0.1"
 
 if __name__ == '__main__':
     print("Generating agent...")
-    agent = Agent(depth_frame_active=False,
-                  flow_frame_active=False,
+    agent = Agent(depth_frame_active=True,
+                  flow_frame_active=True,
                   object_frame_active=False,
                   main_frame_active=True,
                   category_frame_active=True, width=256, height=192, host=host, port=8085, gzip=False)
@@ -52,7 +77,7 @@ if __name__ == '__main__':
 
     print(f"Available scenes: {agent.scenes}")
 
-    scene = agent.scenes[1]
+    scene = agent.scenes[3]
     print(f"Changing scene to {scene}")
     agent.change_scene(scene)
 
@@ -105,7 +130,8 @@ if __name__ == '__main__':
 
             if frame["flow"] is not None:
                 flow = frame["flow"]
-                cv2.imshow("Optical Flow", flow)
+                flow_img = draw_flow_map(flow)
+                cv2.imshow("Optical Flow", flow_img)
 
             if frame["depth"] is not None:
                 depth = frame["depth"]
