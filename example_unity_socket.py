@@ -48,6 +48,7 @@ def draw_flow_lines(frame, optical_flow, line_step=16, line_color=(0, 255, 0)):
 
 
 def draw_flow_map(optical_flow):
+
         hsv = np.zeros((optical_flow.shape[0], optical_flow.shape[1], 3), dtype=np.float32)
         hsv[..., 1] = 255
 
@@ -77,7 +78,7 @@ if __name__ == '__main__':
 
     print(f"Available scenes: {agent.scenes}")
 
-    scene = agent.scenes[3]
+    scene = agent.scenes[1]
     print(f"Changing scene to {scene}")
     agent.change_scene(scene)
 
