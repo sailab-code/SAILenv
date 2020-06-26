@@ -4,14 +4,39 @@ import cv2
 from socket_agent import SocketAgent
 import time
 
+fromMin = 0
+fromMax = 255
+toMin = -1
+toMax = 1
+
+
+def draw_flow_map(optical_flow):
+    hsv = np.zeros((optical_flow.shape[0], optical_flow.shape[1], 3), dtype=np.uint8)
+    hsv[..., 1] = 255
+    mag, ang = cv2.cartToPolar(optical_flow[..., 0], optical_flow[..., 1])
+
+    hsv[..., 0] = ang * 180 / np.pi / 2
+    hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+    #print(np.min(hsv), np.max(hsv))
+    frame_flow_map = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+
+    return frame_flow_map
+
 
 if __name__ == "__main__":
     print("Generating agent...")
     agent = SocketAgent(flow_frame_active=True, object_frame_active=False, main_frame_active=True,
-                  category_frame_active=False, width=200, height=150, host="127.0.0.1", port=8085)
+                  category_frame_active=False, width=300, height=250, host="127.0.0.1", port=8085)
     print("Registering agent on server...")
     agent.register()
     print(f"Agent registered with ID: {agent.id}")
+    last_unity_time: float = 0.0
+
+    print(f"Available scenes: {agent.scenes}")
+
+    scene = agent.scenes[0]
+    print(f"Changing scene to {scene}")
+    agent.change_scene(scene)
     try:
         print("Press ESC to close")
         frame = agent.get_frame()
@@ -21,12 +46,15 @@ if __name__ == "__main__":
             frame = agent.get_frame()
             current_main = frame["main"]
             of = frame["flow"]
+            print(np.min(of), np.max(of))
             rebuilt_main = np.zeros(current_main.shape, current_main.dtype)
             #rebuilt_main = np.copy(current_main)
             h, w, c = current_main.shape
-            of[:,:,0] = of[:,:,0] * w
-            of[:,:,1] = of[:,:,1] * h
+            # of[:,:,0] = of[:,:,0] * w
+            # of[:,:,1] = of[:,:,1] * h
 
+            flow_img = draw_flow_map(of)
+            cv2.imshow("Optical Flow", flow_img)
             # of = 3 * of
 
             for j1 in range(0, w):
