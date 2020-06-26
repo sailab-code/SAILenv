@@ -1,4 +1,4 @@
-name: L2SClient
+name: SAILenv
 channels:
   - defaults
 dependencies:
@@ -78,5 +78,5 @@ dependencies:
     - torchvision==0.5.0
     - urllib3==1.25.8
     - werkzeug==1.0.0
-prefix: D:\ProgramData\Anaconda3\envs\L2SClient
+prefix: D:\ProgramData\Anaconda3\envs\SAILenv
 
