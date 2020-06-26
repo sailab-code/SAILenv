@@ -16,7 +16,7 @@ import cv2
 import socket
 from enum import IntFlag, IntEnum
 import gzip
-
+import struct
 
 # Import src
 
@@ -34,10 +34,16 @@ class CommandsBytes:
     DELETE = b"\x01"
     CHANGE_SCENE = b"\x02"
     GET_CATEGORIES = b"\x03"
+    GET_POSITION = b"\x04"
+    SET_POSITION = b"\x05"
+    GET_ROTATION = b"\x06"
+    SET_ROTATION = b"\x07"
+    TOGGLE_FOLLOW = b"\x08"
 
 class SocketAgent:
 
-    sizeof_int = 4 # sizeof_int in C#
+    sizeof_int = 4  # sizeof(int) in C#
+    sizeof_float = 4  # sizeof(float) in C#
 
     """
     TODO: summary ??? Maybe some more check to avoid connection errors?
@@ -105,6 +111,10 @@ class SocketAgent:
         self.__receive_agent_id()
         self.__receive_scenes()
 
+    def __send_command(self, command):
+        self.socket.send(command)
+
+
     def __send_resolution(self):
         """
         convert the resolution to bytes and send it over the socket
@@ -127,6 +137,30 @@ class SocketAgent:
         """
         data = self.receive_bytes(self.sizeof_int)
         return int.from_bytes(data, self.endianness)
+
+    def __receive_float(self):
+        """
+        Receives a float
+        :return: the received float
+        """
+
+        data = self.receive_bytes(self.sizeof_float)
+        number = struct.unpack("f", data)
+        return number[0]  # struct.unpack always returns a tuple with one item
+
+    def __receive_vector3(self):
+        x = self.__receive_float()
+        y = self.__receive_float()
+        z = self.__receive_float()
+        return x, y, z
+
+    def __send_float(self, number):
+        data = struct.pack("f", number)
+        self.socket.send(data)
+
+    def __send_vector3(self, vector):
+        for i in range(0,3):
+            self.__send_float(vector[i])
 
     def __receive_agent_id(self):
         """
@@ -214,9 +248,8 @@ class SocketAgent:
         # encodes the flags in a single byte
         flags_bytes = self.flags.to_bytes(1, self.endianness)
         # adds the FRAME request byte.
-        request_bytes = CommandsBytes.FRAME + flags_bytes
 
-        self.socket.send(request_bytes)
+        self.__send_command(CommandsBytes.FRAME + flags_bytes)
 
         # start reading images from socket in the following order:
         # main, category, object, optical flow, depth
@@ -272,8 +305,7 @@ class SocketAgent:
         return frame
 
     def change_scene(self, scene_name):
-        request_bytes = CommandsBytes.CHANGE_SCENE
-        self.socket.send(request_bytes)
+        self.__send_command(CommandsBytes.CHANGE_SCENE)
         self.__send_string(scene_name)
 
         result = self.__receive_string()
@@ -284,8 +316,7 @@ class SocketAgent:
         self.__receive_categories()
 
     def __send_get_categories(self):
-        request_bytes = CommandsBytes.GET_CATEGORIES
-        self.socket.send(request_bytes)
+        self.__send_command(CommandsBytes.GET_CATEGORIES)
 
     def receive_bytes(self, n_bytes):
         """
@@ -326,7 +357,39 @@ class SocketAgent:
         TODO: must be implemented on Unity side.
         :return:
         """
+        self.__receive_categories()
         return self.categories
+
+    def get_position(self):
+        self.__send_command(CommandsBytes.GET_POSITION)
+        position = self.__receive_vector3()
+        return position
+
+    def get_rotation(self):
+        self.__send_command(CommandsBytes.GET_ROTATION)
+        rotation = self.__receive_vector3()
+        return rotation
+
+    def set_position(self, position):
+        self.__send_command(CommandsBytes.SET_POSITION)
+        self.__send_vector3(position)
+        result = self.__receive_string()
+        print(f"Result: {result}")
+        if result != "ok":
+            print("Error setting position")
+
+    def set_rotation(self, rotation):
+        self.__send_command(CommandsBytes.SET_ROTATION)
+        self.__send_vector3(rotation)
+        result = self.__receive_string()
+        if result != "ok":
+            print("Error setting rotation")
+
+    def toggle_follow(self):
+        self.__send_command(CommandsBytes.TOGGLE_FOLLOW)
+        result = self.__receive_string()
+        if result != "ok":
+            print("Error toggling follow")
 
     @staticmethod
     def __decode_image(bytes, dtype=np.uint8) -> np.ndarray:
