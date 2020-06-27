@@ -49,7 +49,7 @@ def draw_flow_lines(frame, optical_flow, line_step=16, line_color=(0, 255, 0)):
 
 def draw_flow_map(optical_flow):
 
-        hsv = np.zeros((optical_flow.shape[0], optical_flow.shape[1], 3), dtype=np.float32)
+        hsv = np.zeros((optical_flow.shape[0], optical_flow.shape[1], 3), dtype=np.uint8)
         hsv[..., 1] = 255
 
         mag, ang = cv2.cartToPolar(optical_flow[..., 0], optical_flow[..., 1])
@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
     print(f"Available scenes: {agent.scenes}")
 
-    scene = agent.scenes[1]
+    scene = agent.scenes[3]
     print(f"Changing scene to {scene}")
     agent.change_scene(scene)
 
@@ -109,10 +109,9 @@ if __name__ == '__main__':
                 k = np.array(list(agent.cat_colors.keys()))
                 v = np.array(list(agent.cat_colors.values()))
 
-                mapping_ar = np.zeros((k.max() + 1, 3), dtype=v.dtype)
+                mapping_ar = np.zeros((256, 3), dtype=v.dtype)
                 mapping_ar[k] = v
                 out = mapping_ar[frame["category"]]
-
 
                 # for idx, sup in enumerate(frame["category"]):
                 #     try:

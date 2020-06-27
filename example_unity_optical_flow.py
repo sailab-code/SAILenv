@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     print(f"Available scenes: {agent.scenes}")
 
-    scene = agent.scenes[1]
+    scene = agent.scenes[0]
     print(f"Changing scene to {scene}")
     agent.change_scene(scene)
     try:
