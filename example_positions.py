@@ -30,6 +30,7 @@ if __name__ == '__main__':
         frame_n = 1
         while True:
             print(f"Frame: {frame_n}")
+
             if frame_n % 3 == 0:
                 print("Random change")
                 x = random.uniform(-1., 1.)

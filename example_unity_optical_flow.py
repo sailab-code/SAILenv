@@ -26,7 +26,7 @@ def draw_flow_map(optical_flow):
 if __name__ == "__main__":
     print("Generating agent...")
     agent = SocketAgent(flow_frame_active=True, object_frame_active=False, main_frame_active=True,
-                  category_frame_active=False, width=300, height=250, host="127.0.0.1", port=8085)
+                  category_frame_active=False, width=200, height=150, host="127.0.0.1", port=8085)
     print("Registering agent on server...")
     agent.register()
     print(f"Agent registered with ID: {agent.id}")
@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     print(f"Available scenes: {agent.scenes}")
 
-    scene = agent.scenes[0]
+    scene = agent.scenes[1]
     print(f"Changing scene to {scene}")
     agent.change_scene(scene)
     try:

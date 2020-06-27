@@ -103,22 +103,35 @@ if __name__ == '__main__':
                 cv2.imshow("PBR", main_img)
 
             if frame["category"] is not None:
-                cat_img = np.ndarray((agent.height * agent.width, 3), dtype=np.uint8)
+                start_get_cat = time.time()
+                # cat_img = np.zeros((agent.height * agent.width, 3), dtype=np.uint8)
+                # Extract values and keys
+                k = np.array(list(agent.cat_colors.keys()))
+                v = np.array(list(agent.cat_colors.values()))
 
-                for idx, sup in enumerate(frame["category"]):
-                    try:
-                        color = agent.cat_colors[sup]
-                        cat_img[idx] = color
-                    except KeyError:
-                        #print(f"key error on color get: {sup}")
-                        cat_img[idx] = [0,0,0]
+                mapping_ar = np.zeros((k.max() + 1, 3), dtype=v.dtype)
+                mapping_ar[k] = v
+                out = mapping_ar[frame["category"]]
 
-                cat_img = np.reshape(cat_img, (agent.height, agent.width, 3))
+
+                # for idx, sup in enumerate(frame["category"]):
+                #     try:
+                #         color = agent.cat_colors[sup]
+                #         cat_img[idx] = color
+                #     except KeyError:
+                #         #print(f"key error on color get: {sup}")
+                #         cat_img[idx] = [0,0,0]
+
+                cat_img = np.reshape(out, (agent.height, agent.width, 3))
+                cat_img = cat_img.astype(np.uint8)
 
                 # unity stores the image as left to right, bottom to top
                 # while CV2 reads it left to right, top to bottom
                 # a flip up-down solves the problem
                 #cat_img = np.flipud(cat_img)
+
+                step_get_cat = time.time() - start_get_cat
+                print(f"Plot category in : {step_get_cat}")
                 cv2.imshow("Category", cat_img)
 
             #if frame["category_debug"] is not None:

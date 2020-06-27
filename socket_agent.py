@@ -269,7 +269,8 @@ class SocketAgent:
             cat_frame = self.__decode_category(frame_bytes)
             cat_frame = np.reshape(cat_frame, (self.height, self.width, 3))
             cat_frame = cat_frame[:, :, 0]
-            frame["category"] = cat_frame.flatten()
+            # frame["category"] = cat_frame.flatten()
+            frame["category"] = cat_frame
             frame["sizes"]["category"] = received
             # frame["category_debug"] = self.__decode_image(base64_images["CategoryDebug"])
         else:
