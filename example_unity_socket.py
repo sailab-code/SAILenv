@@ -109,7 +109,7 @@ if __name__ == '__main__':
                 k = np.array(list(agent.cat_colors.keys()))
                 v = np.array(list(agent.cat_colors.values()))
 
-                mapping_ar = np.zeros((256, 3), dtype=v.dtype)
+                mapping_ar = np.zeros((np.maximum(np.max(k)+1, 256), 3), dtype=v.dtype)
                 mapping_ar[k] = v
                 out = mapping_ar[frame["category"]]
 
