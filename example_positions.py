@@ -1,7 +1,7 @@
 from time import sleep
 import random
 
-from socket_agent import SocketAgent as Agent
+from sailenv.agent import Agent
 import cv2
 
 host = "127.0.0.1"

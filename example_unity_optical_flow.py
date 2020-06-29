@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 #from old_http.agent import Agent
-from socket_agent import SocketAgent
+from sailenv.agent import Agent
 import time
 
 fromMin = 0
@@ -23,7 +23,7 @@ def draw_flow_map(optical_flow):
 
 if __name__ == "__main__":
     print("Generating agent...")
-    agent = SocketAgent(depth_frame_active=False,
+    agent = Agent(depth_frame_active=False,
                   flow_frame_active=True,
                   object_frame_active=False,
                   main_frame_active=True,

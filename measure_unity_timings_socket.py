@@ -1,5 +1,5 @@
 import numpy as np
-from socket_agent import SocketAgent
+from sailenv.agent import Agent
 import time
 import matplotlib.pyplot as plt
 from scipy.stats import sem, t
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     for gzip, get_frame_time_data, get_frame_size_data in zip(gzip_sets, get_frame_time_data_list, get_frame_size_data_list):
         for size in sizes:
             print("Generating agent...")
-            agent = SocketAgent(flow_frame_active=True, object_frame_active=True, main_frame_active=True,
+            agent = Agent(flow_frame_active=True, object_frame_active=True, main_frame_active=True,
                           category_frame_active=True, depth_frame_active=True, width=size[0], height=size[1],
                           host="localhost", port=8085, gzip=gzip)
             print(f"Registering agent on server ({size[0]}, {size[1]})...")

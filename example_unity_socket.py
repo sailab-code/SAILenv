@@ -18,7 +18,7 @@ from random import randint
 
 # Import src
 
-from socket_agent import SocketAgent as Agent
+from sailenv.agent import Agent
 
 frames: int = 1000
 
