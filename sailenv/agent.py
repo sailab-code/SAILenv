@@ -40,7 +40,7 @@ class CommandsBytes:
     SET_ROTATION = b"\x07"
     TOGGLE_FOLLOW = b"\x08"
 
-class SocketAgent:
+class Agent:
 
     sizeof_int = 4  # sizeof(int) in C#
     sizeof_float = 4  # sizeof(float) in C#
