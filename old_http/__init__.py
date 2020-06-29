@@ -1,3 +1,0 @@
-"""
-OLD HTTP STUFF: DEPRECATED
-"""
