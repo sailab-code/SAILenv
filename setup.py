@@ -8,7 +8,7 @@ with open("VERSION", "r") as fh:
 
 
 setuptools.setup(
-    name="SAILenv-SAILab",
+    name="sailenv",
     version=version,
     author="Enrico Meloni",
     author_email="meloni@diism.unisi.it",

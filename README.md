@@ -26,3 +26,7 @@ The optical flow is obtained directly from the Unity Physics Engine, meaning tha
 
 ### Agent and Environment communication
 The Agent and the Environment communicate through low-level sockets, allowing highly performant exchange of information. 
+
+
+## Download
+[![PyPI version](https://badge.fury.io/py/sailenv.svg)](https://badge.fury.io/py/sailenv)
