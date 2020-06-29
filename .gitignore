@@ -3,3 +3,7 @@
 SAILaB LVE Windows/
 docker-env/dev/build
 .vscode/
+
+build/
+dist/
+*.egg-info
