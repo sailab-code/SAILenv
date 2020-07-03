@@ -67,8 +67,8 @@ class Category:
             print(type(inst))  # the exception instance
             print(inst.args)  # arguments stored in .args
             print(inst)  # __str__ allows args to be printed directly
-            print(f"Exception in supervisions of category {self.class_cat_name} and file {i}")
-            exit()
+            print(f"Exception in supervisions of category {self.class_cat_name} and file {id}")
+            pass
 
         try:
             # now load prediction
@@ -83,7 +83,7 @@ class Category:
             print(type(inst))  # the exception instance
             print(inst.args)  # arguments stored in .args
             print(inst)  # __str__ allows args to be printed directly
-            print(f"Exception in predicitions of category {self.class_cat_name} and file {i}")
+            print(f"Exception in predictions of category {self.class_cat_name} and file {id}")
             pass
 
         return target_resh_binarized, pred_class_binarized
@@ -146,4 +146,5 @@ if __name__ == '__main__':
             pd.DataFrame([[i.class_cat_name, iou, std]], columns=global_df.columns))
 
     global_df.reset_index(drop=True, inplace=True)
+    global_df.to_csv("iou_results.csv")
 
