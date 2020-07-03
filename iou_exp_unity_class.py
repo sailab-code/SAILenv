@@ -12,21 +12,27 @@ import cv2
 
 
 class Category:
+    """
+    object category class
+    """
+
     def __init__(self, class_cat_couple, global_df, working_dir, data_dir):
         self.class_cat_name = class_cat_couple[0]
         self.class_cat_id = class_cat_couple[1]
         self.global_df = global_df
         self.working_dir = working_dir
         self.data_dir = data_dir
-        self.SMOOTH = 1e-6
+        self.SMOOTH = 1e-6  # to avoid 0/0
         self.class_root = join(working_dir, data_dir, self.class_cat_name)
         self.DEBUG = False
 
     def build(self):
         self.frame_dir = os.path.join(self.class_root, "frames")
+        # get the frames on which compute metrics
         self.frame_names = [f for f in listdir(self.frame_dir) if isfile(join(self.frame_dir, f))]
+        # get the basename of each frame
         self.file_names = [Path(f).stem for f in self.frame_names]
-        # per 5 file esegui load_frame_file
+        # list to manage batch of 5 frames
         supervisions = []
         predictions = []
         counter = 0
@@ -34,17 +40,16 @@ class Category:
         for i in self.file_names:
             if counter == 5:
                 break
+            # load targets and predictions of the current frame
             sup, pred = self.__load_frame_file(i)
             supervisions.append(sup)
             predictions.append(pred)
             counter += 1
 
-
-        # now concat
-
+        # concatenate the list of frames sup/predictions in a single tensor
         supervisions_stacked = np.stack(supervisions, axis=0)
         predictions_stacked = np.stack(predictions, axis=0)
-
+        # compute the bach iou
         iou, std = self.__iou(outputs=predictions_stacked, labels=supervisions_stacked)
         return iou, std
 
@@ -56,8 +61,11 @@ class Category:
             imgplot = plt.imshow(img)
             plt.show()
         try:
+            # load category supervision
             indices, targets = self.__sup_loader(self.class_root, id)
             target_resh = targets.reshape(self.h, self.w)
+            # zeroing all pixels not beloning to current class
+            # crete binary mask of the object
             target_resh_binarized = target_resh == self.class_cat_id
 
             if self.DEBUG:
@@ -73,8 +81,8 @@ class Category:
         try:
             # now load prediction
             pred = self.__pred_loader(self.class_root, id)
-            pred_class_binarized = pred[0, self.class_cat_id] > 0.5
-            # elaborated maskrnn output shape: 1 x 91 x H x W => extract H x W
+            pred_class_binarized = pred[0, self.class_cat_id] > 0.5 # crete binary mask of prediction
+            # elaborated maskrnn output shape: 1 x 91 x H x W => extract H x W, only the desidered class
 
             if self.DEBUG:
                 pred_plot = plt.imshow(pred_class_binarized.astype(np.float))
@@ -130,15 +138,14 @@ if __name__ == '__main__':
     for k, v in cat_dict.items():
         cat_dict_inv[v] = k
 
-    # now code for one class, then generalize
-
     working_dir = os.getcwd()
     data_dir = "dataset_unity"
+    # create global dataframe to store results
     global_df = pd.DataFrame(columns=["Category", "mean_iou", "std_iou"])
-
+    # create list of catagory objects
     objs = [Category(class_cat_couple=(k, v), global_df=global_df, working_dir=working_dir, data_dir=data_dir) for k, v
             in cat_dict_inv.items()]
-
+    # execute performance computation
     for i in objs:
         iou, std = i.build()
         # append values to dataframe
@@ -146,5 +153,4 @@ if __name__ == '__main__':
             pd.DataFrame([[i.class_cat_name, iou, std]], columns=global_df.columns))
 
     global_df.reset_index(drop=True, inplace=True)
-    global_df.to_csv("iou_results.csv")
-
+    global_df.to_csv("iou_results.csv", index=False)
