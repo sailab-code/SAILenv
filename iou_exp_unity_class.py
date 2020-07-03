@@ -114,7 +114,7 @@ class Category:
         # labp = labels.reshape(-1)
         # jscsk = jsc(y_true=labp, y_pred=outp)
 
-        return iou.mean(), iou.std()  # Or thresholded.mean() if you are interested in average across the batch
+        return iou.mean(), iou.std()  #
 
     # TODO add bb_iou
 
@@ -136,8 +136,6 @@ if __name__ == '__main__':
     data_dir = "dataset_unity"
     global_df = pd.DataFrame(columns=["Category", "mean_iou", "std_iou"])
 
-    # class_cat_couple, global_df, working_dir, data_dir
-
     objs = [Category(class_cat_couple=(k, v), global_df=global_df, working_dir=working_dir, data_dir=data_dir) for k, v
             in cat_dict_inv.items()]
 
@@ -148,5 +146,4 @@ if __name__ == '__main__':
             pd.DataFrame([[i.class_cat_name, iou, std]], columns=global_df.columns))
 
     global_df.reset_index(drop=True, inplace=True)
-    global_df.to_csv("iou_results.csv")
-# fare un dataframe in cui si fa append
+
