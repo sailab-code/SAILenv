@@ -128,10 +128,10 @@ class Cat_data:
             with open(os.path.join(folder, name + ".txt"), "a") as f:  #
                 if confidence is None:  # it is a supervision
                     f.write(
-                        f"{self.class_cat_name} {prop.bbox[1]} {prop.bbox[0]} {prop.bbox[3]} {prop.bbox[2]}\n")  # check order
+                        f"{self.class_cat_name} {prop.bbox[0]} {prop.bbox[1]} {prop.bbox[2]} {prop.bbox[3]}\n")  # check order
                 else:
                     f.write(
-                        f"{self.class_cat_name} {confidence} {prop.bbox[1]} {prop.bbox[0]} {prop.bbox[3]} {prop.bbox[2]}\n")
+                        f"{self.class_cat_name} {confidence} {prop.bbox[0]} {prop.bbox[1]} {prop.bbox[2]} {prop.bbox[3]}\n")
 
 
 if __name__ == '__main__':

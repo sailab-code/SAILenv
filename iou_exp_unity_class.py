@@ -9,6 +9,10 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import jaccard_score as jsc
 import pandas as pd
 import cv2
+from skimage.segmentation import mark_boundaries
+from skimage.measure import label, regionprops
+from skimage.morphology import label, dilation, square
+import matplotlib.patches as patches
 
 
 class Category:
@@ -25,6 +29,7 @@ class Category:
         self.SMOOTH = 1e-6  # to avoid 0/0
         self.class_root = join(working_dir, data_dir, self.class_cat_name)
         self.DEBUG = False
+        self.iou_bb_list = []
 
     def build(self):
         self.frame_dir = os.path.join(self.class_root, "frames")
@@ -44,6 +49,10 @@ class Category:
             sup, pred = self.__load_frame_file(i)
             supervisions.append(sup)
             predictions.append(pred)
+
+            sup_bb_list = self.__detect_bb(sup)
+            pred_bb_list = self.__detect_bb(pred)
+            self.iou_bb_list.extend(self.__img_bb_iou(pred_bb_list, sup_bb_list))
             counter += 1
 
         # concatenate the list of frames sup/predictions in a single tensor
@@ -51,7 +60,8 @@ class Category:
         predictions_stacked = np.stack(predictions, axis=0)
         # compute the bach iou
         iou, std = self.__iou(outputs=predictions_stacked, labels=supervisions_stacked)
-        return iou, std
+
+        return iou, std, np.mean(self.iou_bb_list), np.std(self.iou_bb_list)
 
     def __load_frame_file(self, id):
 
@@ -81,7 +91,7 @@ class Category:
         try:
             # now load prediction
             pred = self.__pred_loader(self.class_root, id)
-            pred_class_binarized = pred[0, self.class_cat_id] > 0.5 # crete binary mask of prediction
+            pred_class_binarized = pred[0, self.class_cat_id] > 0.5  # crete binary mask of prediction
             # elaborated maskrnn output shape: 1 x 91 x H x W => extract H x W, only the desidered class
 
             if self.DEBUG:
@@ -124,6 +134,80 @@ class Category:
 
         return iou.mean(), iou.std()  #
 
+    def iou_bb(self, out_boxes, label_boxes):
+        """
+        Calculate the Intersection over Union (IoU) of two bounding boxes.
+
+        Parameters
+        ----------
+        bb1 : dict
+            Keys: {'x1', 'x2', 'y1', 'y2'}
+            The (x1, y1) position is at the top left corner,
+            the (x2, y2) position is at the bottom right corner
+        bb2 : dict
+            Keys: {'x1', 'x2', 'y1', 'y2'}
+            The (x, y) position is at the top left corner,
+            the (x2, y2) position is at the bottom right corner
+
+        Returns
+        -------
+        float
+            in [0, 1]
+        """
+        bb1 = {"x1": out_boxes.bbox[0], "y1": out_boxes.bbox[1], "x2":out_boxes.bbox[2], "y2":out_boxes.bbox[3] }
+        bb2 = {"x1": label_boxes.bbox[0], "y1": label_boxes.bbox[1], "x2":label_boxes.bbox[2], "y2":label_boxes.bbox[3]}
+        assert bb1['x1'] < bb1['x2']
+        assert bb1['y1'] < bb1['y2']
+        assert bb2['x1'] < bb2['x2']
+        assert bb2['y1'] < bb2['y2']
+
+        # determine the coordinates of the intersection rectangle
+        x_left = max(bb1['x1'], bb2['x1'])
+        y_top = max(bb1['y1'], bb2['y1'])
+        x_right = min(bb1['x2'], bb2['x2'])
+        y_bottom = min(bb1['y2'], bb2['y2'])
+
+        if x_right < x_left or y_bottom < y_top:
+            return 0.0
+
+        # The intersection of two axis-aligned bounding boxes is always an
+        # axis-aligned bounding box
+        intersection_area = (x_right - x_left) * (y_bottom - y_top)
+
+        # compute the area of both AABBs
+        bb1_area = (bb1['x2'] - bb1['x1']) * (bb1['y2'] - bb1['y1'])
+        bb2_area = (bb2['x2'] - bb2['x1']) * (bb2['y2'] - bb2['y1'])
+
+        # compute the intersection over union by taking the intersection
+        # area and dividing it by the sum of prediction + ground-truth
+        # areas - the interesection area
+        iou = intersection_area / float(bb1_area + bb2_area - intersection_area)
+        assert iou >= 0.0
+        assert iou <= 1.0
+        return iou
+
+    def __detect_bb(self, img_binarized):  # name class_index.txt
+        img_binarized = dilation(img_binarized, square(20))
+        lbl = label(img_binarized)
+        props = regionprops(lbl)  # returns bbox in (min_row, min_col, max_row, max_col)
+        if self.DEBUG:
+            fig, ax = plt.subplots(1)
+            ax.imshow(img_binarized.astype(np.float))
+
+        good_props = [i for i in props if i.area > 300]
+        props = good_props
+        return props
+
+    def __img_bb_iou(self, out_boxes_list, target_boxes_list):
+        iou_list = []
+        for tar in target_boxes_list:
+            max_iou = 0.0
+            for pred in out_boxes_list:
+                iou = self.iou_bb(pred, tar)
+                max_iou = max(iou, max_iou)
+            iou_list.append(max_iou)
+        return iou_list
+
     # TODO add bb_iou
 
 
@@ -141,16 +225,16 @@ if __name__ == '__main__':
     working_dir = os.getcwd()
     data_dir = "dataset_unity"
     # create global dataframe to store results
-    global_df = pd.DataFrame(columns=["Category", "mean_iou", "std_iou"])
+    global_df = pd.DataFrame(columns=["Category", "mean_iou", "std_iou", "mean_iou_bb", "std_iou_bb"])
     # create list of catagory objects
     objs = [Category(class_cat_couple=(k, v), global_df=global_df, working_dir=working_dir, data_dir=data_dir) for k, v
             in cat_dict_inv.items()]
     # execute performance computation
     for i in objs:
-        iou, std = i.build()
+        iou, std, iou_bb, std_bb = i.build()
         # append values to dataframe
         global_df = global_df.append(
-            pd.DataFrame([[i.class_cat_name, iou, std]], columns=global_df.columns))
+            pd.DataFrame([[i.class_cat_name, iou, std, iou_bb, std_bb]], columns=global_df.columns))
 
     global_df.reset_index(drop=True, inplace=True)
     global_df.to_csv("iou_results.csv", index=False)
