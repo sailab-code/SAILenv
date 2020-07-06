@@ -84,7 +84,6 @@ if __name__ == '__main__':
 
     print(f"Available categories: {agent.categories}")
 
-
     # print(agent.get_resolution())
     try:
         print("Press ESC to close")
