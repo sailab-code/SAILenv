@@ -129,10 +129,10 @@ class Category:
 
 if __name__ == '__main__':
     # dictionary of detected categories
-    cat_dict = {65: 'bed', 84: 'book', 77: 'cell phone', 62: 'chair', 85: 'clock',
-                63: 'couch', 67: 'dining table', 48: 'fork', 73: 'laptop',
-                5: 'airplane', 64: 'potted plant', 75: 'remote', 50: 'spoon',
-                43: 'tennis racket', 70: 'toilet', 72: 'tv', 57: 'bottle_cleaner'}
+    cat_dict = {65: 'bed', 84: 'book', 62: 'chair',
+                63: 'couch', 67: 'dining_table', 48: 'fork', 73: 'laptop',
+                5: 'airplane', 64: 'potted_plant', 75: 'remote', 50: 'spoon',
+                43: 'tennis_racket', 70: 'toilet', 72: 'tv'}
     # invert the dictionary
     cat_dict_inv = {}
     for k, v in cat_dict.items():
