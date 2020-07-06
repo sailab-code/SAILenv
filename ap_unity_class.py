@@ -49,9 +49,9 @@ class Cat_data:
                 # load targets and predictions of the current frame
                 sup_bin, pred_bin, confidence = self.__load_frame_file(i, frame_dir, class_root)
                 self.__detect_and_log_bb(sup_bin, self.gt, name=f"{frame_counter}")
-                self.__detect_and_log_bb(pred_bin, self.gt, name=f"{frame_counter}", confidence=confidence)
+                self.__detect_and_log_bb(pred_bin, self.det, name=f"{frame_counter}", confidence=confidence)
                 counter += 1
-            frame_counter += 1
+                frame_counter += 1
 
         # concatenate the list of frames sup/predictions in a single tensor
 
@@ -85,7 +85,9 @@ class Cat_data:
             pred = self.__pred_loader(class_root, id)
             pred_class_binarized = pred[0, self.class_cat_id] > 0.0005  # crete binary mask of prediction
             confidence = np.max(
-                pred[0, self.class_cat_id])  # max because the predictions are 0 or a value, two possibilities
+                pred[0, self.class_cat_id])
+            if confidence > 1.0:
+                confidence = 1.0 # max because the predictions are 0 or a value, two possibilities
             # elaborated maskrnn output shape: 1 x 91 x H x W => extract H x W, only the desidered class
 
             if self.DEBUG:
@@ -126,10 +128,10 @@ class Cat_data:
             with open(os.path.join(folder, name + ".txt"), "a") as f:  #
                 if confidence is None:  # it is a supervision
                     f.write(
-                        f"{self.class_cat_name} {prop.bbox[1]} {prop.bbox[0]} {prop.bbox[3]} {prop.bbox[2]}")  # check order
+                        f"{self.class_cat_name} {prop.bbox[1]} {prop.bbox[0]} {prop.bbox[3]} {prop.bbox[2]}\n")  # check order
                 else:
                     f.write(
-                        f"{self.class_cat_name} {confidence} {prop.bbox[1]} {prop.bbox[0]} {prop.bbox[3]} {prop.bbox[2]}")
+                        f"{self.class_cat_name} {confidence} {prop.bbox[1]} {prop.bbox[0]} {prop.bbox[3]} {prop.bbox[2]}\n")
 
 
 if __name__ == '__main__':
