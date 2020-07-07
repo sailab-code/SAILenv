@@ -4,6 +4,8 @@ import time
 import matplotlib.pyplot as plt
 from scipy.stats import sem, t
 
+from opticalflow_cv import OpticalFlowCV
+
 confidence = 0.95
 
 total = 100
@@ -37,11 +39,12 @@ if __name__ == "__main__":
                           host="localhost", port=8085, gzip=gzip)
             print(f"Registering agent on server ({size[0]}, {size[1]})...")
             agent.register()
+            agent.change_scene(agent.scenes[1])
             print(f"Agent registered with ID: {agent.id} and gzip {gzip}")
 
             try:
                 print("Press ESC to close")
-                optical_flow = lve.OpticalFlowCV()
+                optical_flow = OpticalFlowCV()
                 get_frame_list = []
                 frame_size_list = []
 
