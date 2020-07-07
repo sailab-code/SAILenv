@@ -27,7 +27,7 @@ if __name__ == "__main__":
                   flow_frame_active=True,
                   object_frame_active=False,
                   main_frame_active=True,
-                  category_frame_active=True, width=256, height=192, host="localhost", port=8085, gzip=False)
+                  category_frame_active=True, width=400, height=300, host="localhost", port=8085, gzip=False)
     print("Registering agent on server...")
     agent.register()
     print(f"Agent registered with ID: {agent.id}")

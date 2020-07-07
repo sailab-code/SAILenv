@@ -39,9 +39,12 @@ if __name__ == "__main__":
             agent.register()
             print(f"Agent registered with ID: {agent.id} and gzip {gzip}")
 
+            scene = agent.scenes[3]
+            print(f"Changing scene to {scene}")
+            agent.change_scene(scene)
             try:
                 print("Press ESC to close")
-                optical_flow = lve.OpticalFlowCV()
+                # optical_flow = lve.OpticalFlowCV()
                 get_frame_list = []
                 frame_size_list = []
 
