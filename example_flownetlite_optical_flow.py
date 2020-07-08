@@ -45,8 +45,8 @@ class FlowNetLiteWrapper:
             #                                                  flags=0)
 
             # TODO remove all this garbage
-            prev = np.ascontiguousarray(np.array(self.prev_frame_gray_scale)[:, :, ::-1].transpose(2, 0, 1).astype(np.float32) * (1.0 / 255.0))
-            actual = np.ascontiguousarray(np.array(self.frame_gray_scale)[:, :, ::-1].transpose(2, 0, 1).astype(np.float32) * (1.0 / 255.0))
+            prev = np.ascontiguousarray(self.prev_frame_gray_scale[:, :, ::-1].transpose(2, 0, 1).astype(np.float32) * (1.0 / 255.0))
+            actual = np.ascontiguousarray(self.frame_gray_scale[:, :, ::-1].transpose(2, 0, 1).astype(np.float32) * (1.0 / 255.0))
 
             tenFirst = torch.FloatTensor(actual)  # od invertirle?
             tenSecond = torch.FloatTensor(prev)
