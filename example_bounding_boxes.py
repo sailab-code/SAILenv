@@ -40,7 +40,7 @@ if __name__ == '__main__':
     agent.register()
     print(f"Agent registered with ID: {agent.id}")
 
-    scene = agent.scenes[3]
+    scene = agent.scenes[2]
     print(f"Changing scene to {scene}")
     agent.change_scene(scene)
 
