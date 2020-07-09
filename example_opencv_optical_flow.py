@@ -3,6 +3,8 @@ import cv2
 #from old_http.agent import Agent
 from sailenv.agent import Agent
 import time
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 fromMin = 0
 fromMax = 255
@@ -131,6 +133,9 @@ if __name__ == "__main__":
     scene = agent.scenes[2]
     print(f"Changing scene to {scene}")
     agent.change_scene(scene)
+
+    of_list = []
+    get_frames = 0
     try:
         print("Press ESC to close")
         frame = agent.get_frame()
@@ -139,7 +144,10 @@ if __name__ == "__main__":
             start_real_time = time.time()
             frame = agent.get_frame()
             current_main = frame["main"]
+            get_frames += 1
+
             of = of_comp(current_main)
+            of_list.append(of)
             #print(np.min(of), np.max(of))
             rebuilt_main = np.zeros(current_main.shape, current_main.dtype)
             #rebuilt_main = np.copy(current_main)
@@ -173,3 +181,8 @@ if __name__ == "__main__":
     finally:
         print(f"Closing agent {agent.id}")
         agent.delete()
+
+        sum_list = np.asarray(of_list).sum((1, 2, 3))  # summing over all dimensions except batch frame
+        print(f"Received {np.count_nonzero(sum_list == 0)} ZERO o.f. frames")
+        plt.hist(sum_list)
+        plt.show()
