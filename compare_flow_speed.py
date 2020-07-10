@@ -3,12 +3,16 @@ from sailenv.agent import Agent
 import time
 import matplotlib.pyplot as plt
 from scipy.stats import sem, t
-
+import seaborn as sns
 from opticalflow_cv import OpticalFlowCV
 
 
-total = 100
+FLOWNET_FLAG = True
 
+
+
+total = 100
+scene = 0
 sizes = [
     (100, 75),
     (200, 150),
@@ -19,7 +23,7 @@ sizes = [
     (1200, 900)
 ]
 
-#sizes = sizes[:2]
+sizes = sizes[:2]
 
 def collect_times_unity(size):
     print("Generating agent...")
@@ -28,7 +32,7 @@ def collect_times_unity(size):
                   host="localhost", port=8085, gzip=False)
     print(f"Registering agent on server ({size[0]}, {size[1]})...")
     agent.register()
-    agent.change_scene(agent.scenes[1])
+    agent.change_scene(agent.scenes[scene])
     print(f"Agent registered with ID: {agent.id}")
 
     try:
@@ -58,7 +62,7 @@ def collect_times_cv(size):
                   host="localhost", port=8085, gzip=False)
     print(f"Registering agent on server ({size[0]}, {size[1]})...")
     agent.register()
-    agent.change_scene(agent.scenes[1])
+    agent.change_scene(agent.scenes[scene])
     print(f"Agent registered with ID: {agent.id}")
 
     try:
@@ -74,6 +78,49 @@ def collect_times_cv(size):
 
             start_cv_flow = time.time()
             flow = optical_flow(frame["main"])
+            step_cv_flow = time.time() - start_cv_flow
+
+
+
+            print(f"Frame {i}/{total}")
+
+            if i != 0:
+                get_frame_times.append(step_get_frame)
+                cv_flow_times.append(step_cv_flow)
+            i += 1
+
+        return get_frame_times, cv_flow_times
+    finally:
+        agent.delete()
+
+
+
+def collect_times_flownet(size):
+    from lite_flow_utils import FlowNetLiteWrapper
+    print("Generating agent...")
+    agent = Agent(flow_frame_active=False, object_frame_active=False, main_frame_active=True,
+                  category_frame_active=False, depth_frame_active=False, width=size[0], height=size[1],
+                  host="localhost", port=8085, gzip=False)
+    print(f"Registering agent on server ({size[0]}, {size[1]})...")
+    agent.register()
+    agent.change_scene(agent.scenes[scene])
+    print(f"Agent registered with ID: {agent.id}")
+    flownetlite = FlowNetLiteWrapper()
+    print("Loaded FlownetLite model...")
+
+    try:
+        get_frame_times = []
+        cv_flow_times = []
+        optical_flow = OpticalFlowCV()
+        i = 0
+
+        while i < total:
+            start_get_frame = time.time()
+            frame = agent.get_frame()
+            step_get_frame = time.time() - start_get_frame
+
+            start_cv_flow = time.time()
+            flow = flownetlite(frame["main"])
             step_cv_flow = time.time() - start_cv_flow
 
 
@@ -108,20 +155,30 @@ if __name__ == '__main__':
     unity_flow_time_per_size = []
     cv_flow_time_per_size = []
     main_frame_time_per_size = []
+    flownet_time_per_size = []
+    flownet_main_time_per_size = []
 
     for size in sizes:
         unity_flow_times = collect_times_unity(size)
         get_frame_times, cv_flow_times = collect_times_cv(size)
+        get_frame_times_net, cv_flow_times_net = collect_times_flownet(size)
 
         unity_flow_time_per_size.append(mean_with_ci(unity_flow_times))
         cv_flow_time_per_size.append(mean_with_ci(cv_flow_times))
         main_frame_time_per_size.append(mean_with_ci(get_frame_times))
+        if FLOWNET_FLAG:
+            flownet_time_per_size.append(mean_with_ci(cv_flow_times_net))
+            flownet_main_time_per_size.append(mean_with_ci(get_frame_times_net))
 
     y_axis = [f"{w}x{h}" for w, h in sizes]
 
     cv_flow_get_frame_time_per_size = [
         (flow[0] + frame[0], flow[1] + frame[1]) for flow, frame in zip(cv_flow_time_per_size, main_frame_time_per_size)
     ]
+    if FLOWNET_FLAG:
+        flownet_cv_flow_get_frame_time_per_size = [
+            (flow[0] + frame[0], flow[1] + frame[1]) for flow, frame in zip(flownet_time_per_size, flownet_main_time_per_size)
+        ]
 
     a = plt.figure(1)
     plt.ylabel(f"time to obtain Optical Flow")
@@ -130,7 +187,10 @@ if __name__ == '__main__':
     data_list, ci_list = get_data_and_ci(cv_flow_time_per_size)
     plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Open-CV")
     data_list, ci_list = get_data_and_ci(cv_flow_get_frame_time_per_size)
-    plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Open-CV +get image overhead")
+    plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Open-CV + get image overhead")
+    if FLOWNET_FLAG:
+        data_list, ci_list = get_data_and_ci(flownet_cv_flow_get_frame_time_per_size)
+        plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Flownet + get image overhead")
     plt.legend()
     a.show()
 
