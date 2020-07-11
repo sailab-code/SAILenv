@@ -303,6 +303,8 @@ class Agent:
             frame["sizes"]["depth"] = 0
             frame["depth"] = None
 
+        frame["deltaTime"] = self.__receive_float()
+
         return frame
 
     def change_scene(self, scene_name):
