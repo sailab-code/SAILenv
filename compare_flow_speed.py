@@ -14,18 +14,18 @@ FLOWNET_FLAG = True
 total = 100
 scene = 0
 sizes = [
-    (100, 75),
-    (200, 150),
-    (400, 300),
-    (600, 450),
+    (240, 180),
+    (320, 240),
+    (640, 480),
     (800, 600),
-    (1000, 750),
-    (1200, 900)
+    (1024, 768),
+    (1280, 960)
 ]
 
-sizes = sizes[:2]
+# sizes = sizes[:2]
 
 def collect_times_unity(size):
+    print("Unity only of timings...")
     print("Generating agent...")
     agent = Agent(flow_frame_active=True, object_frame_active=False, main_frame_active=False,
                   category_frame_active=False, depth_frame_active=False, width=size[0], height=size[1],
@@ -57,6 +57,7 @@ def collect_times_unity(size):
 
 
 def collect_times_unity_plus_main(size):
+    print("Unity of + main timings...")
     print("Generating agent...")
     agent = Agent(flow_frame_active=True, object_frame_active=False, main_frame_active=True,
                   category_frame_active=False, depth_frame_active=False, width=size[0], height=size[1],
@@ -88,6 +89,7 @@ def collect_times_unity_plus_main(size):
 
 
 def collect_times_cv(size):
+    print("OpenCV timings...")
     print("Generating agent...")
     agent = Agent(flow_frame_active=False, object_frame_active=False, main_frame_active=True,
                   category_frame_active=False, depth_frame_active=False, width=size[0], height=size[1],
@@ -129,6 +131,7 @@ def collect_times_cv(size):
 
 def collect_times_flownet(size):
     from lite_flow_utils import FlowNetLiteWrapper
+    print("FlowNet timings...")
     print("Generating agent...")
     agent = Agent(flow_frame_active=False, object_frame_active=False, main_frame_active=True,
                   category_frame_active=False, depth_frame_active=False, width=size[0], height=size[1],
@@ -143,7 +146,7 @@ def collect_times_flownet(size):
     try:
         get_frame_times = []
         cv_flow_times = []
-        optical_flow = OpticalFlowCV()
+        # optical_flow = OpticalFlowCV()
         i = 0
 
         while i < total:
@@ -192,12 +195,12 @@ if __name__ == '__main__':
     flownet_main_time_per_size = []
 
     for size in sizes:
-        unity_flow_times = collect_times_unity(size)
+        # unity_flow_times = collect_times_unity(size)
         unity_flow_main_times = collect_times_unity_plus_main(size)
         get_frame_times, cv_flow_times = collect_times_cv(size)
         get_frame_times_net, cv_flow_times_net = collect_times_flownet(size)
 
-        unity_flow_time_per_size.append(mean_with_ci(unity_flow_times))
+        # unity_flow_time_per_size.append(mean_with_ci(unity_flow_times))
         unity_flow_plus_main_per_size.append(mean_with_ci(unity_flow_main_times))
         cv_flow_time_per_size.append(mean_with_ci(cv_flow_times))
         main_frame_time_per_size.append(mean_with_ci(get_frame_times))
@@ -217,12 +220,12 @@ if __name__ == '__main__':
 
     a = plt.figure(1)
     plt.ylabel(f"time to obtain Optical Flow")
-    data_list, ci_list = get_data_and_ci(unity_flow_time_per_size)
-    plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Unity")
+    # data_list, ci_list = get_data_and_ci(unity_flow_time_per_size)
+    # plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Unity")
     data_list, ci_list = get_data_and_ci(unity_flow_plus_main_per_size)
     plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Unity + main frame")
-    data_list, ci_list = get_data_and_ci(cv_flow_time_per_size)
-    plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Open-CV")
+    # data_list, ci_list = get_data_and_ci(cv_flow_time_per_size)
+    # plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Open-CV")
     data_list, ci_list = get_data_and_ci(cv_flow_get_frame_time_per_size)
     plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Open-CV + get image overhead")
     if FLOWNET_FLAG:
