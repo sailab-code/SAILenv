@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
     of_comp = FlowNetLiteWrapper()
     print("Loaded FlownetLite model...")
-    scene = agent.scenes[2]
+    scene = agent.scenes[0]
     print(f"Changing scene to {scene}")
     agent.change_scene(scene)
     try:

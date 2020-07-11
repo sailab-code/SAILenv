@@ -25,11 +25,13 @@ def draw_flow_map(optical_flow):
 
 if __name__ == "__main__":
     print("Generating agent...")
+    width = 256
+    height = 192
     agent = Agent(depth_frame_active=False,
                   flow_frame_active=True,
                   object_frame_active=False,
                   main_frame_active=True,
-                  category_frame_active=True, width=256, height=192, host="localhost", port=8085, gzip=False)
+                  category_frame_active=True, width=width, height=height, host="localhost", port=8085, gzip=False)
     print("Registering agent on server...")
     agent.register()
     print(f"Agent registered with ID: {agent.id}")
@@ -37,7 +39,7 @@ if __name__ == "__main__":
     rebuild_flag = False
     print(f"Available scenes: {agent.scenes}")
 
-    scene = agent.scenes[0]
+    scene = agent.scenes[2]
     print(f"Changing scene to {scene}")
     agent.change_scene(scene)
 
@@ -54,6 +56,8 @@ if __name__ == "__main__":
             current_main = frame["main"]
             of = frame["flow"]
             get_frames += 1
+            of[..., 0] = of[..., 0] * height
+            of[..., 1] = of[..., 1] * width
             of_list.append(of)
             #print(np.min(of), np.max(of))
             rebuilt_main = np.zeros(current_main.shape, current_main.dtype)
