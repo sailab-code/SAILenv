@@ -96,7 +96,7 @@ class FlowNetLiteWrapper:
         if self.compare_flow:
             return self.optical_flow, to_cuda_time
         else:
-            return self.optical_flow,
+            return self.optical_flow
 
     @staticmethod
     def draw_flow_lines(frame, optical_flow, line_step=16, line_color=(0, 255, 0)):

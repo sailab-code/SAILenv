@@ -5,10 +5,23 @@ import matplotlib.pyplot as plt
 from scipy.stats import sem, t
 import seaborn as sns
 from opticalflow_cv import OpticalFlowCV
+import pandas as pd
 
+sns.set_style("white")
 
 FLOWNET_FLAG = True
 
+
+class Dataframe_Wrap:
+    def __init__(self, columns):
+        self.columns = columns
+        self.df = pd.DataFrame(columns=columns)  # class dataframe
+
+    def appending(self, data):
+        self.df = self.df.append(data, ignore_index=True)
+
+    def to_csv(self, name, sep='\t', encoding='utf-8'):
+        self.df.to_csv(name, sep, encoding)
 
 
 total = 100
@@ -21,6 +34,7 @@ sizes = [
     (1024, 768),
     (1280, 960)
 ]
+
 
 # sizes = sizes[:2]
 
@@ -38,8 +52,6 @@ def collect_times_unity(size):
     try:
         get_flow_times = []
         i = 0
-        frame = agent.get_frame()
-        i += 1
 
         while i < total:
             start_get_frame = time.time()
@@ -58,7 +70,7 @@ def collect_times_unity(size):
         agent.delete()
 
 
-def collect_times_unity_plus_main(size):
+def collect_times_unity_plus_main(size, df_resolutions):
     print("Unity of + main timings...")
     print("Generating agent...")
     agent = Agent(flow_frame_active=True, object_frame_active=False, main_frame_active=True,
@@ -72,8 +84,6 @@ def collect_times_unity_plus_main(size):
     try:
         get_flow_times = []
         i = 0
-        frame = agent.get_frame()
-        i += 1
 
         while i < total:
             start_get_frame = time.time()
@@ -85,6 +95,8 @@ def collect_times_unity_plus_main(size):
 
             if i != 0:
                 get_flow_times.append(step_get_frame)
+                data = pd.Series(["Unity", f"{size}", step_get_frame], index=df_resolutions.columns)
+                df_resolutions.appending(data)
             i += 1
 
         return get_flow_times
@@ -92,7 +104,7 @@ def collect_times_unity_plus_main(size):
         agent.delete()
 
 
-def collect_times_cv(size):
+def collect_times_cv(size, df_resolutions):
     print("OpenCV timings...")
     print("Generating agent...")
     agent = Agent(flow_frame_active=False, object_frame_active=False, main_frame_active=True,
@@ -109,9 +121,6 @@ def collect_times_cv(size):
         optical_flow = OpticalFlowCV()
         i = 0
 
-        frame = agent.get_frame()
-        flow = optical_flow(frame["main"])
-        i += 1
         while i < total:
             start_get_frame = time.time()
             frame = agent.get_frame()
@@ -121,13 +130,13 @@ def collect_times_cv(size):
             flow = optical_flow(frame["main"])
             step_cv_flow = time.time() - start_cv_flow
 
-
-
             print(f"Frame {i}/{total}")
 
             if i != 0:
                 get_frame_times.append(step_get_frame)
                 cv_flow_times.append(step_cv_flow)
+                data = pd.Series(["OpenCV", f"{size}", step_get_frame + step_cv_flow], index=df_resolutions.columns)
+                df_resolutions.appending(data)
             i += 1
 
         return get_frame_times, cv_flow_times
@@ -135,8 +144,7 @@ def collect_times_cv(size):
         agent.delete()
 
 
-
-def collect_times_flownet(size):
+def collect_times_flownet(size, df_resolutions):
     from lite_flow_utils import FlowNetLiteWrapper
     print("FlowNet timings...")
     print("Generating agent...")
@@ -147,40 +155,39 @@ def collect_times_flownet(size):
     agent.register()
     agent.change_scene(agent.scenes[scene])
     print(f"Agent registered with ID: {agent.id}")
-    flownetlite = FlowNetLiteWrapper(device="cuda:0", compare_flow=True)
-    print("Loaded FlownetLite model...")
 
     try:
         get_frame_times = []
-        cv_flow_times = []
-        # optical_flow = OpticalFlowCV()
+        flownet_times = []
+        flownetlite = FlowNetLiteWrapper(device="cuda:0", compare_flow=True)
+        print("Loaded FlownetLite model...")
         i = 0
 
-        #Process first frame
-        frame = agent.get_frame()
-        flow, to_cuda_time = flownetlite(frame["main"])
-        i += 1
         while i < total:
             start_get_frame = time.time()
             frame = agent.get_frame()
             step_get_frame = time.time() - start_get_frame
             start_cv_flow = time.time()
             flow, to_cuda_time = flownetlite(frame["main"])
-            step_cv_flow = time.time() - start_cv_flow - to_cuda_time
+            step_flownet_time = time.time() - start_cv_flow - to_cuda_time
 
             print(f"Frame {i}/{total}")
 
             if i != 0:
                 get_frame_times.append(step_get_frame)
-                cv_flow_times.append(step_cv_flow)
+                flownet_times.append(step_flownet_time)
+                data = pd.Series(["FlowNet", f"{size}", step_get_frame + step_flownet_time], index=df_resolutions.columns)
+                df_resolutions.appending(data)
             i += 1
 
-        return get_frame_times, cv_flow_times
+        return get_frame_times, flownet_times
     finally:
         agent.delete()
 
 
 confidence = 0.95
+
+
 def mean_with_ci(data):
     mean = np.mean(data)
     n = len(data)
@@ -188,33 +195,54 @@ def mean_with_ci(data):
     h = std_err * t.ppf((1 + confidence) / 2, n - 1)
     return mean, h
 
+
 def get_data_and_ci(data_tuple_list):
     data_list = [val for val, ci in data_tuple_list]
     ci_list = [ci for val, ci in data_tuple_list]
     return data_list, ci_list
 
+
 if __name__ == '__main__':
 
     unity_flow_time_per_size = []
+
     unity_flow_plus_main_per_size = []
+    unity_mean_std = []
+
     cv_flow_time_per_size = []
     main_frame_time_per_size = []
+    opencv_mean_std = []
+
     flownet_time_per_size = []
     flownet_main_time_per_size = []
+    flownet_mean_std = []
+
+    columns = ["Method", "Resolution", "Value"]
+    df_resolutions = Dataframe_Wrap(columns=columns)  # class dataframe
 
     for size in sizes:
-        # unity_flow_times = collect_times_unity(size)
-        unity_flow_main_times = collect_times_unity_plus_main(size)
-        get_frame_times, cv_flow_times = collect_times_cv(size)
-        get_frame_times_net, cv_flow_times_net = collect_times_flownet(size)
 
-        # unity_flow_time_per_size.append(mean_with_ci(unity_flow_times))
+        # computing time  and  collecting statistics
+        ################################
+        # unity total time
+        unity_flow_main_times = collect_times_unity_plus_main(size, df_resolutions)
         unity_flow_plus_main_per_size.append(mean_with_ci(unity_flow_main_times))
+        unity_mean_std.append([np.mean(unity_flow_main_times), np.std(unity_flow_main_times)])
+
+        # opencv get frame + farneback
+        get_frame_times, cv_flow_times = collect_times_cv(size, df_resolutions)
         cv_flow_time_per_size.append(mean_with_ci(cv_flow_times))
         main_frame_time_per_size.append(mean_with_ci(get_frame_times))
+        opencv_mean_std.append([np.mean(get_frame_times + cv_flow_times), np.std(get_frame_times + cv_flow_times)])
+
         if FLOWNET_FLAG:
+            # flownet get frame + propagation
+            get_frame_times_net, cv_flow_times_net = collect_times_flownet(size, df_resolutions)
             flownet_time_per_size.append(mean_with_ci(cv_flow_times_net))
             flownet_main_time_per_size.append(mean_with_ci(get_frame_times_net))
+
+            flownet_mean_std.append(
+                [np.mean(get_frame_times_net + cv_flow_times_net), np.std(get_frame_times_net + cv_flow_times_net)])
 
     y_axis = [f"{w}x{h}" for w, h in sizes]
 
@@ -223,10 +251,12 @@ if __name__ == '__main__':
     ]
     if FLOWNET_FLAG:
         flownet_cv_flow_get_frame_time_per_size = [
-            (flow[0] + frame[0], flow[1] + frame[1]) for flow, frame in zip(flownet_time_per_size, flownet_main_time_per_size)
+            (flow[0] + frame[0], flow[1] + frame[1]) for flow, frame in
+            zip(flownet_time_per_size, flownet_main_time_per_size)
         ]
 
     a = plt.figure(1)
+
     plt.ylabel(f"time to obtain Optical Flow")
     # data_list, ci_list = get_data_and_ci(unity_flow_time_per_size)
     # plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Unity")
@@ -242,5 +272,6 @@ if __name__ == '__main__':
     plt.legend()
     a.show()
 
-
-
+    print("Ciao")
+    sns.lineplot('Resolution', 'Value', hue="Method", data=df_resolutions.df, ci=95)
+    plt.show()

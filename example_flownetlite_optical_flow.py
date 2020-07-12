@@ -29,8 +29,7 @@ if __name__ == "__main__":
     rebuild_flag = True
     print(f"Available scenes: {agent.scenes}")
 
-
-    of_comp = FlowNetLiteWrapper()
+    of_comp = FlowNetLiteWrapper(device="cuda:0")
     print("Loaded FlownetLite model...")
     scene = agent.scenes[0]
     print(f"Changing scene to {scene}")
