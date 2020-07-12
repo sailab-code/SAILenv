@@ -95,7 +95,7 @@ def collect_times_unity_plus_main(size, df_resolutions):
 
             if i != 0:
                 get_flow_times.append(step_get_frame)
-                data = pd.Series(["Unity", f"({size[0]}x{size[1]}", step_get_frame, size[0]], index=df_resolutions.columns)
+                data = pd.Series(["Unity", f"({size[0]}x{size[1]})", step_get_frame, size[0]], index=df_resolutions.columns)
                 df_resolutions.appending(data)
             i += 1
 
@@ -135,7 +135,7 @@ def collect_times_cv(size, df_resolutions):
             if i != 0:
                 get_frame_times.append(step_get_frame)
                 cv_flow_times.append(step_cv_flow)
-                data = pd.Series(["OpenCV", f"({size[0]}x{size[1]}", step_get_frame + step_cv_flow, size[0]], index=df_resolutions.columns)
+                data = pd.Series(["OpenCV", f"({size[0]}x{size[1]})", step_get_frame + step_cv_flow, size[0]], index=df_resolutions.columns)
                 df_resolutions.appending(data)
             i += 1
 
@@ -176,7 +176,7 @@ def collect_times_flownet(size, df_resolutions):
             if i != 0:
                 get_frame_times.append(step_get_frame)
                 flownet_times.append(step_flownet_time)
-                data = pd.Series(["LiteFlowNet", f"({size[0]}x{size[1]}", step_get_frame + step_flownet_time, size[0]], index=df_resolutions.columns)
+                data = pd.Series(["LiteFlowNet", f"({size[0]}x{size[1]})", step_get_frame + step_flownet_time, size[0]], index=df_resolutions.columns)
                 df_resolutions.appending(data)
             i += 1
 
@@ -276,5 +276,6 @@ if __name__ == '__main__':
     df_resolutions.df.sort_values(['width', "Method"], inplace=True, ascending=True)
 
     sns.lineplot('Resolution', 'Seconds', hue="Method",  style="Method", data=df_resolutions.df, ci=95, sort=False, markers=True)
-    plt.show()
+
     plt.savefig("temp_comparison.pdf", bbox_inches='tight')
+    plt.show()
