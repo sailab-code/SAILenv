@@ -95,7 +95,7 @@ def collect_times_unity_plus_main(size, df_resolutions):
 
             if i != 0:
                 get_flow_times.append(step_get_frame)
-                data = pd.Series(["Unity", f"{size}", step_get_frame], index=df_resolutions.columns)
+                data = pd.Series(["Unity", f"{size}", step_get_frame, size[0]], index=df_resolutions.columns)
                 df_resolutions.appending(data)
             i += 1
 
@@ -135,7 +135,7 @@ def collect_times_cv(size, df_resolutions):
             if i != 0:
                 get_frame_times.append(step_get_frame)
                 cv_flow_times.append(step_cv_flow)
-                data = pd.Series(["OpenCV", f"{size}", step_get_frame + step_cv_flow], index=df_resolutions.columns)
+                data = pd.Series(["OpenCV", f"{size}", step_get_frame + step_cv_flow, size[0]], index=df_resolutions.columns)
                 df_resolutions.appending(data)
             i += 1
 
@@ -176,7 +176,7 @@ def collect_times_flownet(size, df_resolutions):
             if i != 0:
                 get_frame_times.append(step_get_frame)
                 flownet_times.append(step_flownet_time)
-                data = pd.Series(["FlowNet", f"{size}", step_get_frame + step_flownet_time], index=df_resolutions.columns)
+                data = pd.Series(["FlowNet", f"{size}", step_get_frame + step_flownet_time, size[0]], index=df_resolutions.columns)
                 df_resolutions.appending(data)
             i += 1
 
@@ -217,7 +217,7 @@ if __name__ == '__main__':
     flownet_main_time_per_size = []
     flownet_mean_std = []
 
-    columns = ["Method", "Resolution", "Value"]
+    columns = ["Method", "Resolution", "Value", "width"]
     df_resolutions = Dataframe_Wrap(columns=columns)  # class dataframe
 
     for size in sizes:
@@ -273,5 +273,7 @@ if __name__ == '__main__':
     a.show()
 
     print("Ciao")
-    sns.lineplot('Resolution', 'Value', hue="Method", data=df_resolutions.df, ci=95)
+    df_resolutions.df.sort_values(['width', "Method"], inplace=True, ascending=True)
+
+    sns.lineplot('Resolution', 'Value', hue="Method", data=df_resolutions.df, ci=95, sort=False)
     plt.show()
