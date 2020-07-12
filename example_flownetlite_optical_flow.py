@@ -29,6 +29,7 @@ if __name__ == "__main__":
     rebuild_flag = True
     print(f"Available scenes: {agent.scenes}")
 
+
     of_comp = FlowNetLiteWrapper()
     print("Loaded FlownetLite model...")
     scene = agent.scenes[0]

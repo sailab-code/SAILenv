@@ -38,6 +38,8 @@ def collect_times_unity(size):
     try:
         get_flow_times = []
         i = 0
+        frame = agent.get_frame()
+        i += 1
 
         while i < total:
             start_get_frame = time.time()
@@ -70,6 +72,8 @@ def collect_times_unity_plus_main(size):
     try:
         get_flow_times = []
         i = 0
+        frame = agent.get_frame()
+        i += 1
 
         while i < total:
             start_get_frame = time.time()
@@ -105,6 +109,9 @@ def collect_times_cv(size):
         optical_flow = OpticalFlowCV()
         i = 0
 
+        frame = agent.get_frame()
+        flow = optical_flow(frame["main"])
+        i += 1
         while i < total:
             start_get_frame = time.time()
             frame = agent.get_frame()
@@ -140,7 +147,7 @@ def collect_times_flownet(size):
     agent.register()
     agent.change_scene(agent.scenes[scene])
     print(f"Agent registered with ID: {agent.id}")
-    flownetlite = FlowNetLiteWrapper()
+    flownetlite = FlowNetLiteWrapper(device="cuda:0", compare_flow=True)
     print("Loaded FlownetLite model...")
 
     try:
@@ -149,16 +156,17 @@ def collect_times_flownet(size):
         # optical_flow = OpticalFlowCV()
         i = 0
 
+        #Process first frame
+        frame = agent.get_frame()
+        flow, to_cuda_time = flownetlite(frame["main"])
+        i += 1
         while i < total:
             start_get_frame = time.time()
             frame = agent.get_frame()
             step_get_frame = time.time() - start_get_frame
-
             start_cv_flow = time.time()
-            flow = flownetlite(frame["main"])
-            step_cv_flow = time.time() - start_cv_flow
-
-
+            flow, to_cuda_time = flownetlite(frame["main"])
+            step_cv_flow = time.time() - start_cv_flow - to_cuda_time
 
             print(f"Frame {i}/{total}")
 

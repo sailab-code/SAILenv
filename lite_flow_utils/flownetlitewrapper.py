@@ -3,15 +3,18 @@ import cv2
 from lite_flow_utils import run
 import torch
 import math
-
+import time
 
 class FlowNetLiteWrapper:
 
-    def __init__(self):
+    def __init__(self, device, compare_flow=False):
         self.prev_frame_gray_scale = None
         self.frame_gray_scale = None
         self.optical_flow = None
-        self.net = run.Network().cuda().eval()
+        self.device = device
+        self.net = run.Network().to(self.device)
+        self.net.eval()
+        self.compare_flow = compare_flow
 
     def __call__(self, frame):
         if self.frame_gray_scale is not None:
@@ -46,8 +49,14 @@ class FlowNetLiteWrapper:
             intWidth = prev.shape[2]
             intHeight = prev.shape[1]
 
-            tenPreprocessedFirst = tenFirst.cuda().view(1, 3, intHeight, intWidth)
-            tenPreprocessedSecond = tenSecond.cuda().view(1, 3, intHeight, intWidth)
+
+            start_get_frame = time.time()
+            tenPreprocessedFirst = tenFirst.to(self.device)
+            tenPreprocessedSecond = tenSecond.to(self.device)
+            to_cuda_time = time.time() - start_get_frame
+
+            tenPreprocessedFirst = tenPreprocessedFirst.view(1, 3, intHeight, intWidth)
+            tenPreprocessedSecond = tenPreprocessedSecond.view(1, 3, intHeight, intWidth)
 
             intPreprocessedWidth = int(math.floor(math.ceil(intWidth / 32.0) * 32.0))
             intPreprocessedHeight = int(math.floor(math.ceil(intHeight / 32.0) * 32.0))
@@ -65,8 +74,13 @@ class FlowNetLiteWrapper:
             tenFlow[:, 0, :, :] *= float(intWidth) / float(intPreprocessedWidth)
             tenFlow[:, 1, :, :] *= float(intHeight) / float(intPreprocessedHeight)
 
-            self.optical_flow = tenFlow[0, :, :, :].cpu().numpy().transpose(1, 2, 0)
+            if self.compare_flow:
+                self.optical_flow = tenFlow[0, :, :, :].permute(1, 2, 0)
+
+            else:
+                self.optical_flow = tenFlow[0, :, :, :].cpu().numpy().transpose(1, 2, 0)
         else:
+            to_cuda_time = 0.
             if self.frame_gray_scale is None:
                 if not ((frame.ndim == 3 and frame.shape[2] == 1) or frame.ndim == 2):
                     a, b, c = frame.shape
@@ -79,8 +93,10 @@ class FlowNetLiteWrapper:
                         a, b, c = frame.shape
                     self.optical_flow = np.zeros((a, b, 2), np.float32)
                     self.frame_gray_scale = frame
-
-        return self.optical_flow
+        if self.compare_flow:
+            return self.optical_flow, to_cuda_time
+        else:
+            return self.optical_flow,
 
     @staticmethod
     def draw_flow_lines(frame, optical_flow, line_step=16, line_color=(0, 255, 0)):
