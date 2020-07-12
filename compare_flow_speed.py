@@ -277,3 +277,4 @@ if __name__ == '__main__':
 
     sns.lineplot('Resolution', 'Seconds', hue="Method",  style="Method", data=df_resolutions.df, ci=95, sort=False, markers=True)
     plt.show()
+    plt.savefig("temp_comparison.pdf", bbox_inches='tight')
