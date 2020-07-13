@@ -24,14 +24,14 @@ class Dataframe_Wrap:
         self.df.to_csv(name, sep, encoding)
 
 
-total = 10
+total = 100
 scene = 0
 sizes = [
     (240, 180),
     (320, 240),
-    # (640, 480),
-    # (800, 600),
-    # (1024, 768),
+    (640, 480),
+    (800, 600),
+    (1024, 768),
     (1280, 960)
 ]
 
