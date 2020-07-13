@@ -95,7 +95,7 @@ def collect_times_unity_plus_main(size, df_resolutions):
 
             if i != 0:
                 get_flow_times.append(step_get_frame)
-                data = pd.Series(["Unity", f"({size[0]}x{size[1]})", step_get_frame, size[0]], index=df_resolutions.columns)
+                data = pd.Series(["SAILenv", f"({size[0]}x{size[1]})", step_get_frame, size[0]], index=df_resolutions.columns)
                 df_resolutions.appending(data)
             i += 1
 
