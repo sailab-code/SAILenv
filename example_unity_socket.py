@@ -61,7 +61,7 @@ def draw_flow_map(optical_flow):
 
 #host = "bronte.diism.unisi.it"
 host = "127.0.0.1"
-#host = "eliza.diism.unisi.it"
+host = "eliza.diism.unisi.it"
 
 
 if __name__ == '__main__':
@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
     print(f"Available scenes: {agent.scenes}")
 
-    scene = agent.scenes[2]
+    scene = agent.scenes[1]
     print(f"Changing scene to {scene}")
     agent.change_scene(scene)
 

@@ -24,14 +24,14 @@ class Dataframe_Wrap:
         self.df.to_csv(name, sep, encoding)
 
 
-total = 100
+total = 10
 scene = 0
 sizes = [
     (240, 180),
     (320, 240),
-    (640, 480),
-    (800, 600),
-    (1024, 768),
+    # (640, 480),
+    # (800, 600),
+    # (1024, 768),
     (1280, 960)
 ]
 
@@ -204,18 +204,18 @@ def get_data_and_ci(data_tuple_list):
 
 if __name__ == '__main__':
 
-    unity_flow_time_per_size = []
-
-    unity_flow_plus_main_per_size = []
-    unity_mean_std = []
-
-    cv_flow_time_per_size = []
-    main_frame_time_per_size = []
-    opencv_mean_std = []
-
-    flownet_time_per_size = []
-    flownet_main_time_per_size = []
-    flownet_mean_std = []
+    # unity_flow_time_per_size = []
+    #
+    # unity_flow_plus_main_per_size = []
+    # unity_mean_std = []
+    #
+    # cv_flow_time_per_size = []
+    # main_frame_time_per_size = []
+    # opencv_mean_std = []
+    #
+    # flownet_time_per_size = []
+    # flownet_main_time_per_size = []
+    # flownet_mean_std = []
 
     columns = ["Method", "Resolution", "Seconds", "width"]
     df_resolutions = Dataframe_Wrap(columns=columns)  # class dataframe
@@ -226,53 +226,53 @@ if __name__ == '__main__':
         ################################
         # unity total time
         unity_flow_main_times = collect_times_unity_plus_main(size, df_resolutions)
-        unity_flow_plus_main_per_size.append(mean_with_ci(unity_flow_main_times))
-        unity_mean_std.append([np.mean(unity_flow_main_times), np.std(unity_flow_main_times)])
+        # unity_flow_plus_main_per_size.append(mean_with_ci(unity_flow_main_times))
+        # unity_mean_std.append([np.mean(unity_flow_main_times), np.std(unity_flow_main_times)])
 
         # opencv get frame + farneback
         get_frame_times, cv_flow_times = collect_times_cv(size, df_resolutions)
-        cv_flow_time_per_size.append(mean_with_ci(cv_flow_times))
-        main_frame_time_per_size.append(mean_with_ci(get_frame_times))
-        opencv_mean_std.append([np.mean(get_frame_times + cv_flow_times), np.std(get_frame_times + cv_flow_times)])
+        # cv_flow_time_per_size.append(mean_with_ci(cv_flow_times))
+        # main_frame_time_per_size.append(mean_with_ci(get_frame_times))
+        # opencv_mean_std.append([np.mean(get_frame_times + cv_flow_times), np.std(get_frame_times + cv_flow_times)])
 
         if FLOWNET_FLAG:
             # flownet get frame + propagation
             get_frame_times_net, cv_flow_times_net = collect_times_flownet(size, df_resolutions)
-            flownet_time_per_size.append(mean_with_ci(cv_flow_times_net))
-            flownet_main_time_per_size.append(mean_with_ci(get_frame_times_net))
+            # flownet_time_per_size.append(mean_with_ci(cv_flow_times_net))
+            # flownet_main_time_per_size.append(mean_with_ci(get_frame_times_net))
+            #
+            # flownet_mean_std.append(
+            #     [np.mean(get_frame_times_net + cv_flow_times_net), np.std(get_frame_times_net + cv_flow_times_net)])
 
-            flownet_mean_std.append(
-                [np.mean(get_frame_times_net + cv_flow_times_net), np.std(get_frame_times_net + cv_flow_times_net)])
-
-    y_axis = [f"{w}x{h}" for w, h in sizes]
-
-    cv_flow_get_frame_time_per_size = [
-        (flow[0] + frame[0], flow[1] + frame[1]) for flow, frame in zip(cv_flow_time_per_size, main_frame_time_per_size)
-    ]
-    if FLOWNET_FLAG:
-        flownet_cv_flow_get_frame_time_per_size = [
-            (flow[0] + frame[0], flow[1] + frame[1]) for flow, frame in
-            zip(flownet_time_per_size, flownet_main_time_per_size)
-        ]
-
-    a = plt.figure(1)
-
-    plt.ylabel(f"time to obtain Optical Flow")
-    # data_list, ci_list = get_data_and_ci(unity_flow_time_per_size)
-    # plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Unity")
-    data_list, ci_list = get_data_and_ci(unity_flow_plus_main_per_size)
-    plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Unity + main frame")
-    # data_list, ci_list = get_data_and_ci(cv_flow_time_per_size)
-    # plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Open-CV")
-    data_list, ci_list = get_data_and_ci(cv_flow_get_frame_time_per_size)
-    plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Open-CV + get image overhead")
-    if FLOWNET_FLAG:
-        data_list, ci_list = get_data_and_ci(flownet_cv_flow_get_frame_time_per_size)
-        plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Flownet + get image overhead")
-    plt.legend()
-    a.show()
-
-    print("Ciao")
+    # y_axis = [f"{w}x{h}" for w, h in sizes]
+    #
+    # cv_flow_get_frame_time_per_size = [
+    #     (flow[0] + frame[0], flow[1] + frame[1]) for flow, frame in zip(cv_flow_time_per_size, main_frame_time_per_size)
+    # ]
+    # if FLOWNET_FLAG:
+    #     flownet_cv_flow_get_frame_time_per_size = [
+    #         (flow[0] + frame[0], flow[1] + frame[1]) for flow, frame in
+    #         zip(flownet_time_per_size, flownet_main_time_per_size)
+    #     ]
+    #
+    # a = plt.figure(1)
+    #
+    # plt.ylabel(f"time to obtain Optical Flow")
+    # # data_list, ci_list = get_data_and_ci(unity_flow_time_per_size)
+    # # plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Unity")
+    # data_list, ci_list = get_data_and_ci(unity_flow_plus_main_per_size)
+    # plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Unity + main frame")
+    # # data_list, ci_list = get_data_and_ci(cv_flow_time_per_size)
+    # # plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Open-CV")
+    # data_list, ci_list = get_data_and_ci(cv_flow_get_frame_time_per_size)
+    # plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Open-CV + get image overhead")
+    # if FLOWNET_FLAG:
+    #     data_list, ci_list = get_data_and_ci(flownet_cv_flow_get_frame_time_per_size)
+    #     plt.errorbar(y=data_list, x=y_axis, yerr=ci_list, label=f"Flownet + get image overhead")
+    # plt.legend()
+    # a.show()
+    #
+    # print("Ciao")
     df_resolutions.df.sort_values(['width', "Method"], inplace=True, ascending=True)
 
     sns.lineplot('Resolution', 'Seconds', hue="Method",  style="Method", data=df_resolutions.df, ci=95, sort=False, markers=True)
