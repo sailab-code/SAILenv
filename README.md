@@ -32,15 +32,15 @@ The optical flow is obtained directly from the Unity Physics Engine, meaning tha
 ### Agent and Environment communication
 The Agent and the Environment communicate through low-level sockets, allowing highly performant exchange of information. 
 
-###Cite
+### Cite
 Bibtex::
 
     @article{meloni2020sailenv,
-  title={SAILenv: Learning in Virtual Visual Environments Made Simple},
-  author={Meloni, Enrico and Pasqualini, Luca and Tiezzi, Matteo and Gori, Marco and Melacci, Stefano},
-  journal={arXiv preprint arXiv:2007.08224},
-  year={2020}
-}
+      title={SAILenv: Learning in Virtual Visual Environments Made Simple},
+      author={Meloni, Enrico and Pasqualini, Luca and Tiezzi, Matteo and Gori, Marco and Melacci, Stefano},
+      journal={arXiv preprint arXiv:2007.08224},
+      year={2020}
+    }
 
 
 
