@@ -1,6 +1,7 @@
 # SAILenv Client - SAILab Virtual Environment 
 
 SAILenv is a Virtual Environment powered by Unity3D, developed by SAILab in Siena. This repository contains a Python client for SAILenv.
+Have a look at the project page - [SAILenv](https://sailab.diism.unisi.it/sailenv/) for more details and our [technical report here](https://arxiv.org/abs/2007.08224). 
 
 ## Agent API
 
