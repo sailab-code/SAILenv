@@ -33,8 +33,6 @@ The optical flow is obtained directly from the Unity Physics Engine, meaning tha
 The Agent and the Environment communicate through low-level sockets, allowing highly performant exchange of information. 
 
 ### Cite
-Bibtex::
-
     @article{meloni2020sailenv,
       title={SAILenv: Learning in Virtual Visual Environments Made Simple},
       author={Meloni, Enrico and Pasqualini, Luca and Tiezzi, Matteo and Gori, Marco and Melacci, Stefano},
