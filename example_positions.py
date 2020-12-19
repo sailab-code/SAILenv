@@ -1,8 +1,21 @@
-from time import sleep
+#
+# Copyright (C) 2020 Enrico Meloni, Luca Pasqualini, Matteo Tiezzi
+# University of Siena - Artificial Intelligence Laboratory - SAILab
+#
+#
+# SAILenv is licensed under a MIT license.
+#
+# You should have received a copy of the license along with this
+# work. If not, see <https://en.wikipedia.org/wiki/MIT_License>.
+
+# Import packages
+
 import random
+import cv2
+
+# Import src
 
 from sailenv.agent import Agent
-import cv2
 
 host = "127.0.0.1"
 if __name__ == '__main__':
@@ -11,7 +24,7 @@ if __name__ == '__main__':
                   flow_frame_active=False,
                   object_frame_active=False,
                   main_frame_active=True,
-                  category_frame_active=False, width=256, height=192, host=host, port=8085, gzip=False)
+                  category_frame_active=False, width=256, height=192, host=host, port=8085, use_gzip=False)
     print("Registering agent on server...")
     agent.register()
     print(f"Agent registered with ID: {agent.id}")
@@ -54,7 +67,7 @@ if __name__ == '__main__':
                 cv2.imshow("PBR", main_img)
 
             key = cv2.waitKey(1000)
-            #print(f"FPS: {1/(time.time() - start_real_time)}")
+            # print(f"FPS: {1/(time.time() - start_real_time)}")
             if key == 27:  # ESC Pressed
                 break
             frame_n += 1

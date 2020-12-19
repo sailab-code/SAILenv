@@ -1,5 +1,18 @@
+#
+# Copyright (C) 2020 Enrico Meloni, Luca Pasqualini, Matteo Tiezzi
+# University of Siena - Artificial Intelligence Laboratory - SAILab
+#
+#
+# SAILenv is licensed under a MIT license.
+#
+# You should have received a copy of the license along with this
+# work. If not, see <https://en.wikipedia.org/wiki/MIT_License>.
+
+# Import packages
+
 import cv2
 import numpy as np
+
 
 def draw_flow_map(optical_flow):
     hsv = np.zeros((optical_flow.shape[0], optical_flow.shape[1], 3), dtype=np.uint8)

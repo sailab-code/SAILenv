@@ -36,7 +36,7 @@ if __name__ == "__main__":
             print("Generating agent...")
             agent = Agent(flow_frame_active=True, object_frame_active=True, main_frame_active=True,
                           category_frame_active=True, depth_frame_active=True, width=size[0], height=size[1],
-                          host="localhost", port=8085, gzip=gzip)
+                          host="localhost", port=8085, use_gzip=gzip)
             print(f"Registering agent on server ({size[0]}, {size[1]})...")
             agent.register()
             agent.change_scene(agent.scenes[1])
