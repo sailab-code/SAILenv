@@ -14,7 +14,7 @@
 import time
 import numpy as np
 import cv2
-from random import randint
+import random
 
 # Import src
 
@@ -32,6 +32,7 @@ def decode_image(array: np.ndarray):
     image = cv2.imdecode(array, cv2.IMREAD_COLOR)
     return image
 
+
 frames: int = 1000
 host = "127.0.0.1"
 if __name__ == '__main__':
@@ -40,7 +41,7 @@ if __name__ == '__main__':
                   flow_frame_active=True,
                   object_frame_active=True,
                   main_frame_active=False,
-                  category_frame_active=True, width=256, height=192, host=host, port=8085, gzip=False)
+                  category_frame_active=True, width=256, height=192, host=host, port=8085, use_gzip=False)
     print("Registering agent on server...")
     agent.register()
     print(f"Agent registered with ID: {agent.id}")
@@ -53,6 +54,14 @@ if __name__ == '__main__':
     agent.change_scene(scene)
 
     print(f"Available categories: {agent.categories}")
+
+    print(f"Available spawnable objects: {agent.spawnable_objects_names}")
+
+    # Choose a random object to spawn if there is at least one
+    object_id = None
+    if agent.spawnable_objects_names is not None and len(agent.spawnable_objects_names) > 0:
+        object_name = random.choice(agent.spawnable_objects_names)
+        object_id = agent.spawn_object(object_name)
 
     # print(agent.get_resolution())
     try:
@@ -103,9 +112,12 @@ if __name__ == '__main__':
                 cv2.imshow("Depth", depth)
 
             key = cv2.waitKey(1)
-            #print(f"FPS: {1/(time.time() - start_real_time)}")
+            # print(f"FPS: {1/(time.time() - start_real_time)}")
             if key == 27:  # ESC Pressed
                 break
     finally:
         print(f"Closing agent {agent.id}")
+        # Remove the spawned object if any
+        if object_id is not None:
+            agent.despawn_object(object_id)
         agent.delete()
