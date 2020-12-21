@@ -9,16 +9,17 @@
 # work. If not, see <https://en.wikipedia.org/wiki/MIT_License>.
 
 # Import packages
-from random import randint
 
+from random import randint
 import numpy as np
 import cv2
 import socket
-from enum import IntFlag, IntEnum
+from enum import IntFlag
 import gzip
 import struct
 
 # Import src
+
 
 class FrameFlags(IntFlag):
     NONE = 0
@@ -39,17 +40,21 @@ class CommandsBytes:
     GET_ROTATION = b"\x06"
     SET_ROTATION = b"\x07"
     TOGGLE_FOLLOW = b"\x08"
+    SPAWN_OBJECT = b"\x09"
+    DESPAWN_OBJECT = b"\x0A"
+    GET_SPAWNABLE_OBJECTS_NAMES = b"\x0B"
+
 
 class Agent:
 
     sizeof_int = 4  # sizeof(int) in C#
     sizeof_float = 4  # sizeof(float) in C#
+    # Note: boolean values are like integers
 
+    # TODO: summary
     """
     TODO: summary ??? Maybe some more check to avoid connection errors?
-
     """
-
     def __init__(self,
                  main_frame_active: bool = True,
                  object_frame_active: bool = True,
@@ -60,9 +65,8 @@ class Agent:
                  port: int = 8080,
                  width: int = 512,
                  height: int = 384,
-                 gzip=False):
+                 use_gzip=False):
         """
-
         :param main_frame_active: True if the virtual world should generate the main camera view
         :param object_frame_active: True if the virtual world should generate object instance supervisions
         :param category_frame_active: True if the virtual world should generate category supervisions
@@ -71,7 +75,7 @@ class Agent:
         :param port: port on which the unity virtual world is listening
         :param width: width of the stream
         :param height: height of the stream
-        :param gzip: true if the virtual world should compress the views with gzip
+        :param use_gzip: true if the virtual world should compress the views with gzip
         """
         self.flow_frame_active: bool = flow_frame_active
         self.category_frame_active: bool = category_frame_active
@@ -92,47 +96,88 @@ class Agent:
         self.width = width
         self.height = height
 
-        # creates a TCP socket over IPv4
+        self.spawned_objects_idstr_names_table = dict()
+
+        # Creates a TCP socket over IPv4
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        self.gzip = gzip
+        self.gzip = use_gzip
 
-        # numbers are sent as little endian. TODO: check if this is also true on linux or just windows.
+        # Numbers are sent as little endian
+        # TODO: check if this is also true on linux or just windows.
         self.endianness = 'little'
 
-    def register(self):
-        """
-        Register the agent on the Unity server and set its id.
-        """
-        #connect to the unity socket
-        self.socket.connect((self.host, self.port))
-        self.__send_resolution()
-        self.__send_gzip_setting()
-        self.__receive_agent_id()
-        self.__receive_scenes()
+    # Generic commands
 
     def __send_command(self, command):
+        """
+        Sends a command (of type CommandBytes).
+        """
         self.socket.send(command)
-
 
     def __send_resolution(self):
         """
-        convert the resolution to bytes and send it over the socket
+        Convert the resolution to bytes and send it over the socket.
         """
-        resolution_bytes = self.width.to_bytes(4, self.endianness) + \
-                           self.height.to_bytes(4, self.endianness)
+        resolution_bytes = self.width.to_bytes(4, self.endianness) + self.height.to_bytes(4, self.endianness)
         self.socket.send(resolution_bytes)
 
     def __send_gzip_setting(self):
         """
-        send gzip option
+        Sends gzip option (boolean).
         """
-        gzip_byte = b"\x01" if self.gzip else b"\x00"
-        self.socket.send(gzip_byte)
+        self.__send_bool(self.gzip)
+
+    def __send_bool(self, boolean):
+        """
+        Sends a boolean.
+        """
+        data = b"\x01" if boolean else b"\x00"
+        self.socket.send(data)
+
+    def __send_int(self, number):
+        """
+        Sends an integer.
+        """
+        data = struct.pack("i", number)
+        self.socket.send(data)
+
+    def __send_float(self, number):
+        """
+        Sends a float.
+        """
+        data = struct.pack("f", number)
+        self.socket.send(data)
+
+    def __send_vector3(self, vector):
+        """
+        Sends a vector3 (of floats).
+        """
+        for i in range(0, 3):
+            self.__send_float(vector[i])
+
+    def __send_string(self, string: str, str_format="utf-8"):
+        """
+        Sends a string.
+        :param str_format: the format of the string
+        """
+        string_size = len(string)
+        self.socket.send(string_size.to_bytes(4, self.endianness))
+        data = string.encode(str_format)
+        self.socket.send(data)
+
+    def __receive_bool(self):
+        """
+        Receives a boolean.
+        :return: the received boolean
+        """
+        # Note: the size of a boolean is the same of an integer
+        data = self.receive_bytes(self.sizeof_int)
+        return bool.from_bytes(data, self.endianness)
 
     def __receive_int(self):
         """
-        Receives an integer
+        Receives an integer.
         :return: the received integer
         """
         data = self.receive_bytes(self.sizeof_int)
@@ -140,60 +185,61 @@ class Agent:
 
     def __receive_float(self):
         """
-        Receives a float
+        Receives a float.
         :return: the received float
         """
-
         data = self.receive_bytes(self.sizeof_float)
         number = struct.unpack("f", data)
         return number[0]  # struct.unpack always returns a tuple with one item
 
     def __receive_vector3(self):
+        """
+        Receives a vector3 (of floats).
+        :return: the received vector3
+        """
         x = self.__receive_float()
         y = self.__receive_float()
         z = self.__receive_float()
         return x, y, z
 
-    def __send_float(self, number):
-        data = struct.pack("f", number)
-        self.socket.send(data)
-
-    def __send_vector3(self, vector):
-        for i in range(0,3):
-            self.__send_float(vector[i])
-
-    def __receive_agent_id(self):
-        """
-        receives agent id
-        """
-        self.id = self.__receive_int()
-
     def __receive_string(self, str_format="utf-8"):
         """
-        receives a string
+        Receives a string.
         :return: the received string
         """
-
         string_size = self.__receive_int()
         data = self.receive_bytes(string_size)
         return data.decode(str_format)
 
-    def __send_string(self, string: str, str_format="utf-8"):
-        """
-        sends a string
-        :param str_format:
-        :return:
-        """
+    # Specific commands
 
-        string_size = len(string)
-        self.socket.send(string_size.to_bytes(4, self.endianness))
-        data = string.encode(str_format)
-        self.socket.send(data)
+    def register(self):
+        """
+        Register the agent on the Unity server and set its id.
+        """
+        # Connect to the unity socket
+        self.socket.connect((self.host, self.port))
+        self.__send_resolution()
+        self.__send_gzip_setting()
+        self.__receive_agent_id()
+        self.__receive_scenes()
+
+    def delete(self):
+        """
+        Delete the agent on the Unity server.
+        """
+        self.socket.send(CommandsBytes.DELETE)
+
+    def __receive_agent_id(self):
+        """
+        Receives agent id (an integer).
+        """
+        self.id = self.__receive_int()
 
     def __receive_categories(self):
         """
-        sends a get categories command and receives a list of available categories (name, id)
-        :return:
+        Sends a get categories command and receives a list of available categories (name, id).
+        :return: the list of available categories
         """
         self.__send_get_categories()
 
@@ -214,11 +260,26 @@ class Agent:
         self.categories = categories
         self.cat_colors = colors
 
+    def __receive_spawnable_objects_names(self):
+        """
+        Sends a get spawnable objects name command and receives a list of spawnable object names (strings).
+        :return: the list of spawnable object names
+        """
+        self.__send_get_spawnable_objects_names()
+
+        spawnable_objects_number = self.__receive_int()
+        prefab_names = []
+
+        for i in range(spawnable_objects_number):
+            prefab_name = self.__receive_string()
+            prefab_names.append(prefab_name)
+
+        self.spawnable_objects_names = prefab_names
+
     def __receive_scenes(self):
         """
-        receives a list of available scene names
+        Receives a list of available scene names.
         """
-
         scenes_number = self.__receive_int()
         scenes = list()
 
@@ -228,19 +289,26 @@ class Agent:
 
         self.scenes = scenes
 
-    def delete(self):
+    def __send_get_categories(self):
         """
-        Delete the agent on the Unity server.
+        Sends a get categories command.
         """
-        self.socket.send(CommandsBytes.DELETE)  # x01 is the code unity expects for deleting an agent
+        self.__send_command(CommandsBytes.GET_CATEGORIES)
+
+    def __send_get_spawnable_objects_names(self):
+        """
+        Send a get spawnable objects command.
+        """
+        self.__send_command(CommandsBytes.GET_SPAWNABLE_OBJECTS_NAMES)
+
+    # Public commands
 
     def get_frame(self):
         """
         Get the frame from the cameras on the Unity server.
-
-        :return: a dict of frames indexed by keys main, object, category, flow, depth. \
-                 It has also a "sizes" key containing the size in byte of the received frame. (Different from the
-                 actual size of the frame when gzip compression is enabled.
+        :return: a dict of frames indexed by keys main, object, category, flow, depth. It has also a "sizes" key
+        containing the size in byte of the received frame (different from the actual size of the frame when gzip
+        compression is enabled)
         """
         # initialize the frame dictionary
         frame = {"sizes": {}}
@@ -308,6 +376,10 @@ class Agent:
         return frame
 
     def change_scene(self, scene_name):
+        """
+        Sends a change scene command.
+        :param scene_name: the name of the scene to load into the Unity server
+        """
         self.__send_command(CommandsBytes.CHANGE_SCENE)
         self.__send_string(scene_name)
 
@@ -317,31 +389,26 @@ class Agent:
             return
 
         self.__receive_categories()
-
-    def __send_get_categories(self):
-        self.__send_command(CommandsBytes.GET_CATEGORIES)
+        self.__receive_spawnable_objects_names()
 
     def receive_bytes(self, n_bytes):
         """
-        Receives exactly n_bytes from the socket
-
-        :param n_bytes: Number of bytes that should be received from the socket.
-
-        :return an array of n_bytes bytes.
+        Receives exactly n_bytes from the socket.
+        :param n_bytes: Number of bytes that should be received from the socket
+        :return an array of n_bytes bytes
         """
         received = 0
-        bytes = b''
+        bytes_array = b''
         while received < n_bytes:
             chunk = self.socket.recv(n_bytes - received)
             received += len(chunk)
-            bytes += chunk
-        return bytes
+            bytes_array += chunk
+        return bytes_array
 
     def receive_next_frame_view(self):
         """
         Receives the next frame from the socket.
-
-        :return: a byte array containing the encoded frame view.
+        :return: a byte array containing the encoded frame view
         """
         frame_length = int.from_bytes(self.socket.recv(4), self.endianness)  # first we read the length of the frame
         frame_bytes = self.receive_bytes(frame_length)
@@ -356,24 +423,35 @@ class Agent:
 
     def get_categories(self):
         """
-        Gets the categories list from the socket
-        TODO: must be implemented on Unity side.
-        :return:
+        Gets the categories list from the socket.
+        :return: the list of categories
         """
         self.__receive_categories()
         return self.categories
 
     def get_position(self):
+        """
+        Sends a get position command.
+        :return: the vector3 (of floats) position of the agent
+        """
         self.__send_command(CommandsBytes.GET_POSITION)
         position = self.__receive_vector3()
         return position
 
     def get_rotation(self):
+        """
+        Sends a get rotation (euler angles) command.
+        :return: the vector3 (of floats) rotation of the agent
+        """
         self.__send_command(CommandsBytes.GET_ROTATION)
         rotation = self.__receive_vector3()
         return rotation
 
     def set_position(self, position):
+        """
+        Sends a set position command.
+        :param position: the vector3 (of floats) position of the agent
+        """
         self.__send_command(CommandsBytes.SET_POSITION)
         self.__send_vector3(position)
         result = self.__receive_string()
@@ -382,6 +460,10 @@ class Agent:
             print("Error setting position")
 
     def set_rotation(self, rotation):
+        """
+        Sends a set rotation (euler angles) command.
+        :param rotation: the vector3 (of floats) rotation of the agent
+        """
         self.__send_command(CommandsBytes.SET_ROTATION)
         self.__send_vector3(rotation)
         result = self.__receive_string()
@@ -389,29 +471,82 @@ class Agent:
             print("Error setting rotation")
 
     def toggle_follow(self):
+        """
+        Sends a toggle follow command.
+        """
         self.__send_command(CommandsBytes.TOGGLE_FOLLOW)
         result = self.__receive_string()
         if result != "ok":
             print("Error toggling follow")
 
+    def spawn_object(self, name,
+                     position=(0, 0, 0), rotation=(0, 0, 0),
+                     remove_dynamics=True, scale=(1, 1, 1), use_parent=True):
+        """
+        Spawn an object into the Unity server by sending a spawn object command. Note: this also adds the spawned object,
+        if actually spawned, to the spawned object idstr names table of the agent.
+        :param name: the name of the object to spawn
+        :param position: the vector3 (of floats) position where to spawn
+        :param rotation: the vector3 (of floats) rotation (euler angles) at which to spawn
+        :param remove_dynamics: a flag to remove or not the dynamics (gravity, movement, etc) from the spawned object
+        :param scale: the vector3 (of floats) scale of the object once spawned
+        :param use_parent: a flag to spawn the object a child of the default parent (as defined in the Unity server)
+        :return: a string empty if the object is not spawned, containing the object unique instance id otherwise
+        """
+        self.__send_command(CommandsBytes.SPAWN_OBJECT)
+        self.__send_string(name)
+        self.__send_vector3(position)
+        self.__send_vector3(rotation)
+        self.__send_bool(remove_dynamics)
+        self.__send_vector3(scale)
+        self.__send_bool(use_parent)
+        object_instance_id = self.__receive_string()
+        # If the instance id is an empty string, the spawn is not successful
+        if not object_instance_id:
+            print("Error object " + name + " not spawned")
+            return object_instance_id
+        # If the object is spawned add the instance id to the table
+        self.spawned_objects_idstr_names_table[object_instance_id] = name
+        return object_instance_id
+
+    def despawn_object(self, idstr):
+        """
+        Despawn an object identified by the given instance id (in string format), by sending a despawn object command.
+        Note: this also removes the despawned object, if actually despawned, from the spawned object idstr names table
+        of the agent.
+        :param idstr: the instance id of the object to despawn in string format
+        """
+        # Convert the idstr to an integer id
+        id_number = int(idstr)
+        # Actually send the commands
+        self.__send_command(CommandsBytes.DESPAWN_OBJECT)
+        self.__send_int(id_number)
+        result = self.__receive_string()
+        if result != "ok":
+            print("Error despawning object with id " + idstr)
+            return
+        # Remove the entry from the dictionary
+        self.spawned_objects_idstr_names_table.pop(idstr)
+
+    # Other methods
+
     @staticmethod
-    def __decode_image(bytes, dtype=np.uint8) -> np.ndarray:
+    def __decode_image(image_bytes, dtype=np.uint8) -> np.ndarray:
         """
         Decode an image from the given bytes representation to a numpy array.
 
-        :param bytes: the bytes representation of an image
+        :param image_bytes: the bytes representation of an image
         :return: the numpy array representation of an image
         """
-        return np.frombuffer(bytes, dtype)
+        return np.frombuffer(image_bytes, dtype)
 
-    def __decode_category(self, input) -> np.ndarray:
+    def __decode_category(self, input_base64) -> np.ndarray:
         """
         Decode the category supervisions from the given base64 representation to a numpy array.
-        :param input: the base64 representation of categories
+        :param input_base64: the base64 representation of categories
         :return: the numpy array containing the category supervisions
         """
-
-        cat_frame = self.__decode_image(input)
+        cat_frame = self.__decode_image(input_base64)
         cat_frame = np.reshape(cat_frame, (self.height, self.width, -1))
         cat_frame = np.flipud(cat_frame)
         cat_frame = np.reshape(cat_frame, (-1))

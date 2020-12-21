@@ -43,7 +43,7 @@ def collect_times_unity(size):
     print("Generating agent...")
     agent = Agent(flow_frame_active=True, object_frame_active=False, main_frame_active=False,
                   category_frame_active=False, depth_frame_active=False, width=size[0], height=size[1],
-                  host="localhost", port=8085, gzip=False)
+                  host="localhost", port=8085, use_gzip=False)
     print(f"Registering agent on server ({size[0]}, {size[1]})...")
     agent.register()
     agent.change_scene(agent.scenes[scene])
@@ -75,7 +75,7 @@ def collect_times_unity_plus_main(size, df_resolutions):
     print("Generating agent...")
     agent = Agent(flow_frame_active=True, object_frame_active=False, main_frame_active=True,
                   category_frame_active=False, depth_frame_active=False, width=size[0], height=size[1],
-                  host="localhost", port=8085, gzip=False)
+                  host="localhost", port=8085, use_gzip=False)
     print(f"Registering agent on server ({size[0]}, {size[1]})...")
     agent.register()
     agent.change_scene(agent.scenes[scene])
@@ -109,7 +109,7 @@ def collect_times_cv(size, df_resolutions):
     print("Generating agent...")
     agent = Agent(flow_frame_active=False, object_frame_active=False, main_frame_active=True,
                   category_frame_active=False, depth_frame_active=False, width=size[0], height=size[1],
-                  host="localhost", port=8085, gzip=False)
+                  host="localhost", port=8085, use_gzip=False)
     print(f"Registering agent on server ({size[0]}, {size[1]})...")
     agent.register()
     agent.change_scene(agent.scenes[scene])
@@ -150,7 +150,7 @@ def collect_times_flownet(size, df_resolutions):
     print("Generating agent...")
     agent = Agent(flow_frame_active=False, object_frame_active=False, main_frame_active=True,
                   category_frame_active=False, depth_frame_active=False, width=size[0], height=size[1],
-                  host="localhost", port=8085, gzip=False)
+                  host="localhost", port=8085, use_gzip=False)
     print(f"Registering agent on server ({size[0]}, {size[1]})...")
     agent.register()
     agent.change_scene(agent.scenes[scene])

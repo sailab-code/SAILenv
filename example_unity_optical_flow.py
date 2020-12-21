@@ -1,10 +1,24 @@
+#
+# Copyright (C) 2020 Enrico Meloni, Luca Pasqualini, Matteo Tiezzi
+# University of Siena - Artificial Intelligence Laboratory - SAILab
+#
+#
+# SAILenv is licensed under a MIT license.
+#
+# You should have received a copy of the license along with this
+# work. If not, see <https://en.wikipedia.org/wiki/MIT_License>.
+
+# Import packages
+
 import numpy as np
 import cv2
-#from old_http.agent import Agent
-from sailenv.agent import Agent
 import time
-import seaborn as sns
 import matplotlib.pyplot as plt
+
+# Import src
+
+from sailenv.agent import Agent
+
 
 fromMin = 0
 fromMax = 255
@@ -23,6 +37,7 @@ def draw_flow_map(optical_flow):
 
     return frame_flow_map
 
+
 if __name__ == "__main__":
     print("Generating agent...")
     width = 256
@@ -31,7 +46,7 @@ if __name__ == "__main__":
                   flow_frame_active=True,
                   object_frame_active=False,
                   main_frame_active=True,
-                  category_frame_active=True, width=width, height=height, host="localhost", port=8085, gzip=False)
+                  category_frame_active=True, width=width, height=height, host="localhost", port=8085, use_gzip=False)
     print("Registering agent on server...")
     agent.register()
     print(f"Agent registered with ID: {agent.id}")
@@ -59,9 +74,9 @@ if __name__ == "__main__":
             of[..., 0] = of[..., 0] * height
             of[..., 1] = of[..., 1] * width
             of_list.append(of)
-            #print(np.min(of), np.max(of))
+            # print(np.min(of), np.max(of))
             rebuilt_main = np.zeros(current_main.shape, current_main.dtype)
-            #rebuilt_main = np.copy(current_main)
+            # rebuilt_main = np.copy(current_main)
             h, w, c = current_main.shape
             # of[:,:,0] = of[:,:,0] * w
             # of[:,:,1] = of[:,:,1] * h
@@ -72,7 +87,7 @@ if __name__ == "__main__":
             if rebuild_flag:
                 for j1 in range(0, w):
                     for i1 in range(0, h):
-                        if np.all(of[i1][j1] == [0,0]):
+                        if np.all(of[i1][j1] == [0, 0]):
                             continue
                         i0 = max(min(int(round(i1 + of[i1][j1][1])), h - 1), 0)
                         j0 = max(min(int(round(j1 + of[i1][j1][0])), w - 1), 0)
@@ -94,10 +109,7 @@ if __name__ == "__main__":
         agent.delete()
         print(f"Got {get_frames} frames, the list is long {len(of_list)}!")
 
-        sum_list = np.asarray(of_list).sum((1,2,3))  # summing over all dimensions except batch frame
+        sum_list = np.asarray(of_list).sum((1, 2, 3))  # summing over all dimensions except batch frame
         print(f"Received {np.count_nonzero(sum_list==0)} ZERO o.f. frames")
         plt.hist(sum_list)
         plt.show()
-
-
-

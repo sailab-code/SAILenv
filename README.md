@@ -2,6 +2,11 @@
 
 SAILenv is a Virtual Environment powered by Unity3D, developed by SAILab in Siena. This repository contains a Python client for SAILenv.
 
+Have a look at the project page - [SAILenv](https://sailab.diism.unisi.it/sailenv/) for more details.
+
+[Technical report here](https://arxiv.org/abs/2007.08224) -  accepted at ICPR2020. 
+
+
 ## Agent API
 
 SAILenv is accessible through an instance of the Agent class, which acts as the API between Python scripts and the environment. The API is designed to be as easy as possible to integrate with most known computer vision frameworks.
@@ -26,6 +31,15 @@ The optical flow is obtained directly from the Unity Physics Engine, meaning tha
 
 ### Agent and Environment communication
 The Agent and the Environment communicate through low-level sockets, allowing highly performant exchange of information. 
+
+### Cite
+    @article{meloni2020sailenv,
+      title={SAILenv: Learning in Virtual Visual Environments Made Simple},
+      author={Meloni, Enrico and Pasqualini, Luca and Tiezzi, Matteo and Gori, Marco and Melacci, Stefano},
+      journal={arXiv preprint arXiv:2007.08224},
+      year={2020}
+    }
+
 
 
 ## Download

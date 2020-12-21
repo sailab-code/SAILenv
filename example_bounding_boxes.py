@@ -1,7 +1,21 @@
-import numpy as np
+#
+# Copyright (C) 2020 Enrico Meloni, Luca Pasqualini, Matteo Tiezzi
+# University of Siena - Artificial Intelligence Laboratory - SAILab
+#
+#
+# SAILenv is licensed under a MIT license.
+#
+# You should have received a copy of the license along with this
+# work. If not, see <https://en.wikipedia.org/wiki/MIT_License>.
+
+# Import packages
+
 import cv2
 
+# Import src
+
 from sailenv.agent import Agent
+
 
 def get_bboxes(cat_frame, obj_frame):
     boundaries = {}
@@ -11,7 +25,7 @@ def get_bboxes(cat_frame, obj_frame):
             obj_id = tuple(obj_frame[y, x])
             if obj_id not in boundaries:
                 boundaries[obj_id] = {
-                    "top" : y,
+                    "top": y,
                     "bottom": y,
                     "left": x,
                     "right": x,
@@ -24,18 +38,17 @@ def get_bboxes(cat_frame, obj_frame):
                 boundary["left"] = min(boundary["left"], x)
                 boundary["right"] = max(boundary["right"], x)
 
-
     return boundaries.values()
 
-host = "127.0.0.1"
 
+host = "127.0.0.1"
 if __name__ == '__main__':
     print("Generating agent...")
     agent = Agent(depth_frame_active=False,
                   flow_frame_active=False,
                   object_frame_active=True,
                   main_frame_active=True,
-                  category_frame_active=True, width=256*2, height=192*2, host=host, port=8085, gzip=False)
+                  category_frame_active=True, width=256*2, height=192*2, host=host, port=8085, use_gzip=False)
     print("Registering agent on server...")
     agent.register()
     print(f"Agent registered with ID: {agent.id}")
