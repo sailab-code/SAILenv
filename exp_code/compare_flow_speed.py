@@ -276,6 +276,8 @@ if __name__ == '__main__':
     df_resolutions.df.sort_values(['width', "Method"], inplace=True, ascending=True)
 
     sns.lineplot('Resolution', 'Seconds', hue="Method",  style="Method", data=df_resolutions.df, ci=95, sort=False, markers=True)
+    plt.savefig("temp_comparison_ci.pdf", bbox_inches='tight')
 
-    plt.savefig("temp_comparison.pdf", bbox_inches='tight')
+    sns.lineplot('Resolution', 'Seconds', hue="Method",  style="Method", data=df_resolutions.df, ci=None, sort=False, markers=True)
+    plt.savefig("temp_comparison_noci.pdf", bbox_inches='tight')
     plt.show()

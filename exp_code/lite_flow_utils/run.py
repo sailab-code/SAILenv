@@ -13,7 +13,7 @@ import sys
 try:
 	from .correlation import correlation # the custom cost volume layer
 except:
-	sys.path.insert(0, './correlation'); import correlation # you should consider upgrading python
+	sys.path.insert(0, './lite_flow_utils/correlation'); import correlation # you should consider upgrading python
 # end
 
 ##########################################################

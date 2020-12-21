@@ -6,7 +6,6 @@ with open("README.md", "r") as fh:
 with open("VERSION", "r") as fh:
     version = fh.read()
 
-
 setuptools.setup(
     name="sailenv",
     version=version,
@@ -22,5 +21,6 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent"
     ],
-    python_requires='>=3.6'
+    python_requires='>=3.6',
+    include_package_data=True
 )
