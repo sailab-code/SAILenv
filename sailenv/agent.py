@@ -9,16 +9,21 @@
 # work. If not, see <https://en.wikipedia.org/wiki/MIT_License>.
 
 # Import packages
-
+import os
 from random import randint
+from typing import Union
+
 import numpy as np
 import cv2
 import socket
 from enum import IntFlag
 import gzip
 import struct
+import io
+
 
 # Import src
+from typing.io import BinaryIO
 
 
 class FrameFlags(IntFlag):
@@ -43,6 +48,7 @@ class CommandsBytes:
     SPAWN_OBJECT = b"\x09"
     DESPAWN_OBJECT = b"\x0A"
     GET_SPAWNABLE_OBJECTS_NAMES = b"\x0B"
+    SEND_OBJ_ZIP = b"\x0C"
 
 
 class Agent:
@@ -107,7 +113,7 @@ class Agent:
         # TODO: check if this is also true on linux or just windows.
         self.endianness = 'little'
 
-    # Generic commands
+    # region Netcode
 
     def __send_command(self, command):
         """
@@ -211,25 +217,6 @@ class Agent:
         data = self.receive_bytes(string_size)
         return data.decode(str_format)
 
-    # Specific commands
-
-    def register(self):
-        """
-        Register the agent on the Unity server and set its id.
-        """
-        # Connect to the unity socket
-        self.socket.connect((self.host, self.port))
-        self.__send_resolution()
-        self.__send_gzip_setting()
-        self.__receive_agent_id()
-        self.__receive_scenes()
-
-    def delete(self):
-        """
-        Delete the agent on the Unity server.
-        """
-        self.socket.send(CommandsBytes.DELETE)
-
     def __receive_agent_id(self):
         """
         Receives agent id (an integer).
@@ -301,7 +288,48 @@ class Agent:
         """
         self.__send_command(CommandsBytes.GET_SPAWNABLE_OBJECTS_NAMES)
 
-    # Public commands
+    def __send_bytes(self, data):
+        """
+        Sends bytes in the socket.
+        :param data: the bytes that must be sent
+        """
+        self.socket.sendall(data)
+
+    def __send_file(self, file: BinaryIO, filename: str):
+        """
+        Sends a file in the socket.
+        :param file: file to be sent
+        """
+        self.__send_string(filename)
+
+        # get file size
+        file.seek(0, io.SEEK_END)
+        file_len = file.tell()
+        file.seek(0)
+
+        self.__send_int(file_len)
+        self.socket.sendfile(file)
+
+    # endregion Netcode
+
+    # region Public commands
+
+    def register(self):
+        """
+        Register the agent on the Unity server and set its id.
+        """
+        # Connect to the unity socket
+        self.socket.connect((self.host, self.port))
+        self.__send_resolution()
+        self.__send_gzip_setting()
+        self.__receive_agent_id()
+        self.__receive_scenes()
+
+    def delete(self):
+        """
+        Delete the agent on the Unity server.
+        """
+        self.socket.send(CommandsBytes.DELETE)
 
     def get_frame(self):
         """
@@ -528,7 +556,27 @@ class Agent:
         # Remove the entry from the dictionary
         self.spawned_objects_idstr_names_table.pop(idstr)
 
-    # Other methods
+    def send_obj_zip(self, file: Union[str, BinaryIO], filename=None):
+
+        self.__send_command(CommandsBytes.SEND_OBJ_ZIP)
+
+        if isinstance(file, str):
+            filename = os.path.basename(file)
+            with open(file, "rb") as file:
+                self.__send_file(file, filename)
+        else:
+            if filename is None:
+                raise ValueError("filename cannot be None if an open file is provided")
+            self.__send_file(file, filename)
+
+        # after sending the object, we receive the path where the file was stored
+
+        save_path = self.__receive_string()
+        return save_path
+
+    # endregion Public commands
+
+    # region Data decoding and image manipulation
 
     @staticmethod
     def __decode_image(image_bytes, dtype=np.uint8) -> np.ndarray:
@@ -568,3 +616,5 @@ class Agent:
         # restore it as contiguous array, as flipud breaks the contiguity
         flow = np.ascontiguousarray(flow)
         return flow
+
+    # endregion
