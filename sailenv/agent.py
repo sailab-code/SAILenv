@@ -49,6 +49,7 @@ class CommandsBytes:
     DESPAWN_OBJECT = b"\x0A"
     GET_SPAWNABLE_OBJECTS_NAMES = b"\x0B"
     SEND_OBJ_ZIP = b"\x0C"
+    SET_MAIN_CAMERA_CLEAR_FLAGS = b"\x0D"
 
 
 class Agent:
@@ -557,7 +558,9 @@ class Agent:
         self.spawned_objects_idstr_names_table.pop(idstr)
 
     def send_obj_zip(self, file: Union[str, BinaryIO], filename=None):
-
+        """
+        TODO
+        """
         self.__send_command(CommandsBytes.SEND_OBJ_ZIP)
 
         if isinstance(file, str):
@@ -573,6 +576,20 @@ class Agent:
 
         save_path = self.__receive_string()
         return save_path
+
+    def change_main_camera_clear_flags(self, r: int, g: int, b: int):
+        """
+        TODO
+        Note: sending negative values for at least one channel means to use the skybox
+        """
+        self.__send_command(CommandsBytes.SET_MAIN_CAMERA_CLEAR_FLAGS)
+        # Send the color
+        self.__send_int(r)
+        self.__send_int(g)
+        self.__send_int(b)
+        result = self.__receive_string()
+        if result != "ok":
+            print("Error sending clear flags")
 
     # endregion Public commands
 

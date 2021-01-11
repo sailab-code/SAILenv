@@ -38,10 +38,10 @@ host = "127.0.0.1"
 if __name__ == '__main__':
     print("Generating agent...")
     agent = Agent(depth_frame_active=False,
-                  flow_frame_active=True,
-                  object_frame_active=True,
-                  main_frame_active=False,
-                  category_frame_active=True, width=256, height=192, host=host, port=8085, use_gzip=False)
+                  flow_frame_active=False,
+                  object_frame_active=False,
+                  main_frame_active=True,
+                  category_frame_active=False, width=256, height=192, host=host, port=8085, use_gzip=False)
     print("Registering agent on server...")
     agent.register()
     print(f"Agent registered with ID: {agent.id}")
@@ -56,6 +56,9 @@ if __name__ == '__main__':
     print(f"Available categories: {agent.categories}")
 
     print(f"Available spawnable objects: {agent.spawnable_objects_names}")
+
+    agent.change_main_camera_clear_flags(255, 255, 255)
+    print("Changing main camera clear flags to white")
 
     # Choose a random object to spawn if there is at least one
     object_id = None
