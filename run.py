@@ -61,7 +61,7 @@ if __name__ == '__main__':
     object_id = None
     if agent.spawnable_objects_names is not None and len(agent.spawnable_objects_names) > 0:
         object_name = random.choice(agent.spawnable_objects_names)
-        object_id = agent.spawn_object(object_name)
+        object_id = agent.spawn_object("file:F:\\Workspace\\PyCharm\\SAIFooler\\meshes\\toilet\\toilet_obj.zip")
 
     # print(agent.get_resolution())
     try:
