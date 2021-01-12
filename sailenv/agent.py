@@ -484,7 +484,6 @@ class Agent:
         self.__send_command(CommandsBytes.SET_POSITION)
         self.__send_vector3(position)
         result = self.__receive_string()
-        print(f"Result: {result}")
         if result != "ok":
             print("Error setting position")
 
