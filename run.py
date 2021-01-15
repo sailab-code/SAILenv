@@ -65,6 +65,7 @@ if __name__ == '__main__':
     if agent.spawnable_objects_names is not None and len(agent.spawnable_objects_names) > 0:
         object_name = random.choice(agent.spawnable_objects_names)
         object_id = agent.spawn_object("file:F:\\Workspace\\PyCharm\\SAIFooler\\meshes\\toilet\\toilet_obj.zip")
+        pass
 
     # print(agent.get_resolution())
     try:
@@ -118,6 +119,12 @@ if __name__ == '__main__':
             # print(f"FPS: {1/(time.time() - start_real_time)}")
             if key == 27:  # ESC Pressed
                 break
+            if key == ord('c'):
+                if scene == agent.scenes[2]:
+                    scene = agent.scenes[1]
+                else:
+                    scene = agent.scenes[2]
+                agent.change_scene(scene)
     finally:
         print(f"Closing agent {agent.id}")
         # Remove the spawned object if any
