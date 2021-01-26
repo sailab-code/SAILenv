@@ -50,12 +50,27 @@ class CommandsBytes:
     GET_SPAWNABLE_OBJECTS_NAMES = b"\x0B"
     SEND_OBJ_ZIP = b"\x0C"
     SET_MAIN_CAMERA_CLEAR_FLAGS = b"\x0D"
+    GET_LIGHT_COLOR = b"\x0E"
+    SET_LIGHT_COLOR = b"\x0F"
+    GET_LIGHT_INTENSITY = b"\x10"
+    SET_LIGHT_INTENSITY = b"\x11"
+    GET_LIGHT_INDIRECT_MULTIPLIER = b"\x12"
+    SET_LIGHT_INDIRECT_MULTIPLIER = b"\x13"
+    GET_LIGHT_POSITION = b"\x14"
+    SET_LIGHT_POSITION = b"\x15"
+    GET_LIGHT_DIRECTION = b"\x16"
+    SET_LIGHT_DIRECTION = b"\x17"
+    GET_LIGHT_TYPE = b"\x18"
+    GET_LIGHTS_NAMES = b"\x19"
+    GET_AMBIENT_LIGHT_COLOR = b"\x1A"
+    SET_AMBIENT_LIGHT_COLOR = b"\x1B"
 
 
 class Agent:
 
     sizeof_int = 4  # sizeof(int) in C#
     sizeof_float = 4  # sizeof(float) in C#
+    sizeof_double = 8  # sizeof(double) in C#
     # Note: boolean values are like integers
 
     # TODO: summary
@@ -102,6 +117,11 @@ class Agent:
         self.port = port
         self.width = width
         self.height = height
+
+        self.scenes = None
+        self.categories = None
+        self.spawnable_objects_names = None
+        self.lights_names = None
 
         self.spawned_objects_idstr_names_table = dict()
 
@@ -156,6 +176,13 @@ class Agent:
         data = struct.pack("f", number)
         self.socket.send(data)
 
+    def __send_double(self, number):
+        """
+        Sends a double.
+        """
+        data = struct.pack("d", number)
+        self.socket.send(data)
+
     def __send_vector3(self, vector):
         """
         Sends a vector3 (of floats).
@@ -199,6 +226,15 @@ class Agent:
         number = struct.unpack("f", data)
         return number[0]  # struct.unpack always returns a tuple with one item
 
+    def __receive_double(self):
+        """
+        Receives a double.
+        :return: the received double
+        """
+        data = self.receive_bytes(self.sizeof_double)
+        number = struct.unpack("d", data)
+        return number[0]  # struct.unpack always returns a tuple with one item
+
     def __receive_vector3(self):
         """
         Receives a vector3 (of floats).
@@ -227,7 +263,6 @@ class Agent:
     def __receive_categories(self):
         """
         Sends a get categories command and receives a list of available categories (name, id).
-        :return: the list of available categories
         """
         self.__send_get_categories()
 
@@ -251,7 +286,6 @@ class Agent:
     def __receive_spawnable_objects_names(self):
         """
         Sends a get spawnable objects name command and receives a list of spawnable object names (strings).
-        :return: the list of spawnable object names
         """
         self.__send_get_spawnable_objects_names()
 
@@ -263,6 +297,21 @@ class Agent:
             prefab_names.append(prefab_name)
 
         self.spawnable_objects_names = prefab_names
+
+    def __receive_lights_names(self):
+        """
+        Sends a get lights names command and receives a list of lights names (strings).
+        """
+        self.__send_get_lights_names()
+
+        lights_names_number = self.__receive_int()
+        lights_names = []
+
+        for i in range(lights_names_number):
+            light_name = self.__receive_string()
+            lights_names.append(light_name)
+
+        self.lights_names = lights_names
 
     def __receive_scenes(self):
         """
@@ -285,9 +334,15 @@ class Agent:
 
     def __send_get_spawnable_objects_names(self):
         """
-        Send a get spawnable objects command.
+        Sends a get spawnable objects command.
         """
         self.__send_command(CommandsBytes.GET_SPAWNABLE_OBJECTS_NAMES)
+
+    def __send_get_lights_names(self):
+        """
+        Sends a get lights names command.
+        """
+        self.__send_command(CommandsBytes.GET_LIGHTS_NAMES)
 
     def __send_bytes(self, data):
         """
@@ -419,6 +474,7 @@ class Agent:
 
         self.__receive_categories()
         self.__receive_spawnable_objects_names()
+        self.__receive_lights_names()
 
     def receive_bytes(self, n_bytes):
         """
@@ -589,6 +645,193 @@ class Agent:
         result = self.__receive_string()
         if result != "ok":
             print("Error sending clear flags")
+
+    def get_light_color(self, light_name: str):
+        """
+        TODO
+        """
+        self.__send_command(CommandsBytes.GET_LIGHT_COLOR)
+        # Send the name
+        self.__send_string(light_name)
+        result = self.__receive_string()
+        if result == "ok":
+            # Receive the color
+            r = self.__receive_int()
+            g = self.__receive_int()
+            b = self.__receive_int()
+            return r, g, b
+        print("Error getting light color")
+        return None
+
+    def set_light_color(self, light_name: str, r: int, g: int, b: int):
+        """
+        TODO
+        """
+        self.__send_command(CommandsBytes.SET_LIGHT_COLOR)
+        # Send the name
+        self.__send_string(light_name)
+        # Send the color
+        self.__send_int(r)
+        self.__send_int(g)
+        self.__send_int(b)
+        result = self.__receive_string()
+        if result != "ok":
+            print("Error setting light color")
+
+    def get_light_position(self, light_name: str):
+        """
+        TODO
+        """
+        self.__send_command(CommandsBytes.GET_LIGHT_POSITION)
+        # Send the name
+        self.__send_string(light_name)
+        result = self.__receive_string()
+        if result == "ok":
+            # Receive the position
+            position = self.__receive_vector3()
+            return position
+        print("Error getting light position")
+        return None
+
+    def set_light_position(self, light_name: str, position):
+        """
+        TODO
+        """
+        self.__send_command(CommandsBytes.SET_LIGHT_POSITION)
+        # Send the name
+        self.__send_string(light_name)
+        # Send the position
+        self.__send_vector3(position)
+        result = self.__receive_string()
+        if result != "ok":
+            print("Error setting light position")
+
+    def get_light_direction(self, light_name: str):
+        """
+        TODO
+        """
+        self.__send_command(CommandsBytes.GET_LIGHT_DIRECTION)
+        # Send the name
+        self.__send_string(light_name)
+        result = self.__receive_string()
+        if result == "ok":
+            # Receive the direction
+            direction = self.__receive_vector3()
+            return direction
+        print("Error getting light direction")
+        return None
+
+    def set_light_direction(self, light_name: str, direction):
+        """
+        TODO
+        """
+        self.__send_command(CommandsBytes.SET_LIGHT_DIRECTION)
+        # Send the name
+        self.__send_string(light_name)
+        # Send the direction
+        self.__send_vector3(direction)
+        result = self.__receive_string()
+        if result != "ok":
+            print("Error setting light direction")
+
+    def get_light_intensity(self, light_name: str):
+        """
+        TODO
+        """
+        self.__send_command(CommandsBytes.GET_LIGHT_INTENSITY)
+        # Send the name
+        self.__send_string(light_name)
+        result = self.__receive_string()
+        if result == "ok":
+            # Receive the intensity
+            intensity = self.__receive_float()
+            return intensity
+        print("Error getting light intensity")
+        return None
+
+    def set_light_intensity(self, light_name: str, intensity: float):
+        """
+        TODO
+        """
+        self.__send_command(CommandsBytes.SET_LIGHT_INTENSITY)
+        # Send the name
+        self.__send_string(light_name)
+        # Send the intensity
+        self.__send_float(intensity)
+        result = self.__receive_string()
+        if result != "ok":
+            print("Error setting light intensity")
+
+    def get_light_indirect_multiplier(self, light_name: str):
+        """
+        TODO
+        """
+        self.__send_command(CommandsBytes.GET_LIGHT_INDIRECT_MULTIPLIER)
+        # Send the name
+        self.__send_string(light_name)
+        result = self.__receive_string()
+        if result == "ok":
+            # Receive the indirect multiplier
+            indirect_multiplier = self.__receive_float()
+            return indirect_multiplier
+        print("Error getting light indirect multiplier")
+        return None
+
+    def set_light_indirect_multiplier(self, light_name: str, indirect_multiplier: float):
+        """
+        TODO
+        """
+        self.__send_command(CommandsBytes.SET_LIGHT_INDIRECT_MULTIPLIER)
+        # Send the name
+        self.__send_string(light_name)
+        # Send the indirect multiplier
+        self.__send_float(indirect_multiplier)
+        result = self.__receive_string()
+        if result != "ok":
+            print("Error setting light indirect multiplier")
+
+    def get_light_type(self, light_name: str):
+        """
+        TODO
+        """
+        self.__send_command(CommandsBytes.GET_LIGHT_TYPE)
+        # Send the name
+        self.__send_string(light_name)
+        result = self.__receive_string()
+        if result == "light_not_found":
+            print("Error getting light type")
+            return None
+        return result
+
+    def get_ambient_light_color(self):
+        """
+        TODO
+        """
+        self.__send_command(CommandsBytes.GET_AMBIENT_LIGHT_COLOR)
+        # Get the result
+        result = self.__receive_string()
+        if result == "ok":
+            # Receive the color
+            r = self.__receive_int()
+            g = self.__receive_int()
+            b = self.__receive_int()
+            return r, g, b
+        print("Error getting ambient light color")
+        return None
+
+    def set_ambient_light_color(self, r: int, g: int, b: int):
+        """
+        TODO
+        """
+        self.__send_command(CommandsBytes.SET_AMBIENT_LIGHT_COLOR)
+        # Send the color
+        self.__send_int(r)
+        self.__send_int(g)
+        self.__send_int(b)
+        result = self.__receive_string()
+        if result != "ok":
+            print("Error setting ambient light color")
+
 
     # endregion Public commands
 

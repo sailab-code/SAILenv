@@ -49,7 +49,10 @@ if __name__ == '__main__':
 
     print(f"Available scenes: {agent.scenes}")
 
-    scene = agent.scenes[1]
+    current_scene_index = 1
+    spawned_object_id = None
+
+    scene = agent.scenes[current_scene_index]
     print(f"Changing scene to {scene}")
     agent.change_scene(scene)
 
@@ -57,15 +60,10 @@ if __name__ == '__main__':
 
     print(f"Available spawnable objects: {agent.spawnable_objects_names}")
 
+    print(f"Available lights: {agent.lights_names}")
+
     agent.change_main_camera_clear_flags(255, 255, 255)
     print("Changing main camera clear flags to white")
-
-    # Choose a random object to spawn if there is at least one
-    object_id = None
-    if agent.spawnable_objects_names is not None and len(agent.spawnable_objects_names) > 0:
-        object_name = random.choice(agent.spawnable_objects_names)
-        object_id = agent.spawn_object("file:F:\\Workspace\\PyCharm\\SAIFooler\\meshes\\toilet\\toilet_obj.zip")
-        pass
 
     # print(agent.get_resolution())
     try:
@@ -119,15 +117,44 @@ if __name__ == '__main__':
             # print(f"FPS: {1/(time.time() - start_real_time)}")
             if key == 27:  # ESC Pressed
                 break
+            # Change scene (in order loop)
             if key == ord('c'):
-                if scene == agent.scenes[2]:
-                    scene = agent.scenes[1]
+                current_scene_index += 1
+                if current_scene_index > len(agent.scenes):
+                    current_scene_index = 0
+                # Set the clear flags to the appropriate color
+                if current_scene_index == 1:
+                    agent.change_main_camera_clear_flags(255, 255, 255)
+                    print("Changing main camera clear flags to white")
                 else:
-                    scene = agent.scenes[2]
+                    agent.change_main_camera_clear_flags(-1, -1, -1)
+                    print("Changing main camera clear flags to skybox")
+                scene = agent.scenes[current_scene_index]
                 agent.change_scene(scene)
+            # Change light intensity (decreasing in loop)
+            if key == ord('l'):
+                if agent.lights_names is not None and len(agent.lights_names) > 0:
+                    light_name = agent.lights_names[0]
+                    intensity = agent.get_light_intensity(light_name) - 0.25
+                    if intensity <= 0.0:
+                        agent.set_light_intensity(light_name, 1.0)
+                    else:
+                        agent.set_light_intensity(light_name, intensity)
+            # Change ambient light color (cycling in a set of colors by random)
+            if key == ord('a'):
+                ambient_lights = [(255, 255, 255), (0, 0, 0), (255, 0, 0), (0, 255, 0), (0, 0, 255)]
+                random_ambient_light = random.choice(ambient_lights)
+                agent.set_ambient_light_color(random_ambient_light[0], random_ambient_light[1], random_ambient_light[2])
+            # Choose a random object to spawn if there is at least one available and despawn any already spawned object
+            if key == ord('s'):
+                if spawned_object_id is not None:
+                    agent.despawn_object(spawned_object_id)
+                if agent.spawnable_objects_names is not None and len(agent.spawnable_objects_names) > 0:
+                    object_name = random.choice(agent.spawnable_objects_names)
+                    spawned_object_id = agent.spawn_object(object_name)
     finally:
         print(f"Closing agent {agent.id}")
-        # Remove the spawned object if any
-        if object_id is not None:
-            agent.despawn_object(object_id)
+        # Remove the object spawned by this agent, if any
+        if spawned_object_id is not None:
+            agent.despawn_object(spawned_object_id)
         agent.delete()
