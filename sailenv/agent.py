@@ -879,7 +879,7 @@ class Agent:
         bytes_buffer = io.BytesIO()
         bytes_buffer.write(image_bytes)
         pil_img = Image.open(bytes_buffer)
-        return np.asarray(pil_img)
+        return np.asarray(pil_img, dtype=np.float32) / 255
 
     def __decode_category(self, frame_bytes) -> np.ndarray:
         """
