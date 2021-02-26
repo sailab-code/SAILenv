@@ -14,6 +14,8 @@
 import time
 import numpy as np
 import cv2
+import tkinter as tk
+from PIL import Image, ImageTk
 
 # Import src
 
@@ -29,7 +31,7 @@ def decode_image(array: np.ndarray):
     :param array: the numpy array to decode
     :return: the decoded image that can be displayed
     """
-    image = cv2.imdecode(array, cv2.IMREAD_COLOR)
+    image = cv2.cvtColor(array, cv2.COLOR_RGB2BGR)
     return image
 
 
@@ -58,15 +60,27 @@ def draw_flow_map(optical_flow):
     return frame_flow_map
 
 
+def create_windows(agent: Agent):
+    windows = {}
+    for view, is_active in agent.active_frames.items():
+        if is_active:
+            window = tk.Tk()
+            window.geometry(f"{agent.width}x{agent.height}")
+            windows[view] = window
+
+
+
+
+
 # host = "bronte.diism.unisi.it"
-# host = "127.0.0.1"
-host = "eliza.diism.unisi.it"
+host = "127.0.0.1"
+# host = "eliza.diism.unisi.it"
 if __name__ == '__main__':
     print("Generating agent...")
-    agent = Agent(depth_frame_active=False,
+    agent = Agent(depth_frame_active=True,
                   flow_frame_active=True,
                   object_frame_active=True,
-                  main_frame_active=False,
+                  main_frame_active=True,
                   category_frame_active=True, width=256, height=192, host=host, port=8085, use_gzip=False)
     print("Registering agent on server...")
     agent.register()
@@ -75,7 +89,7 @@ if __name__ == '__main__':
 
     print(f"Available scenes: {agent.scenes}")
 
-    scene = agent.scenes[1]
+    scene = agent.scenes[0]
     print(f"Changing scene to {scene}")
     agent.change_scene(scene)
 
@@ -95,7 +109,7 @@ if __name__ == '__main__':
             print(f"get frame in seconds: {step_get}, fps: {1/step_get}")
 
             if frame["main"] is not None:
-                main_img = frame["main"]
+                main_img = cv2.cvtColor(frame["main"], cv2.COLOR_RGB2BGR)
                 cv2.imshow("PBR", main_img)
 
             if frame["category"] is not None:
@@ -128,10 +142,6 @@ if __name__ == '__main__':
                 step_get_cat = time.time() - start_get_cat
                 print(f"Plot category in : {step_get_cat}")
                 cv2.imshow("Category", cat_img)
-
-            # if frame["category_debug"] is not None:
-            #    cat_img = decode_image(frame["category_debug"])
-            #    cv2.imshow("Category Debug", cat_img)
 
             if frame["object"] is not None:
                 obj_img = decode_image(frame["object"])

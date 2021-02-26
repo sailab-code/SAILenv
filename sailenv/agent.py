@@ -14,12 +14,12 @@ from random import randint
 from typing import Union
 
 import numpy as np
-import cv2
 import socket
 from enum import IntFlag
 import gzip
 import struct
 import io
+from PIL import Image
 
 
 # Import src
@@ -133,6 +133,16 @@ class Agent:
         # Numbers are sent as little endian
         # TODO: check if this is also true on linux or just windows.
         self.endianness = 'little'
+
+    @property
+    def active_frames(self):
+        return {
+            "main": self.main_frame_active,
+            "category": self.category_frame_active,
+            "object": self.object_frame_active,
+            "flow": self.flow_frame_active,
+            "depth": self.depth_frame_active
+        }
 
     # region Netcode
 
@@ -408,8 +418,7 @@ class Agent:
         if self.main_frame_active:
             frame_bytes, received = self.receive_next_frame_view()
 
-            # main is a png image, so it can be read with cv2
-            frame["main"] = cv2.imdecode(self.__decode_image(frame_bytes), cv2.IMREAD_COLOR)
+            frame["main"] = self.__decode_image(frame_bytes)
             frame["sizes"]["main"] = received
         else:
             frame["sizes"]["main"] = 0
@@ -421,10 +430,8 @@ class Agent:
             cat_frame = self.__decode_category(frame_bytes)
             cat_frame = np.reshape(cat_frame, (self.height, self.width, 3))
             cat_frame = cat_frame[:, :, 0]
-            # frame["category"] = cat_frame.flatten()
             frame["category"] = cat_frame
             frame["sizes"]["category"] = received
-            # frame["category_debug"] = self.__decode_image(base64_images["CategoryDebug"])
         else:
             frame["sizes"]["category"] = 0
             frame["category"] = None
@@ -440,7 +447,7 @@ class Agent:
 
         if self.flow_frame_active:
             frame_bytes, received = self.receive_next_frame_view()
-            flow = self.__decode_image(frame_bytes, np.float32)
+            flow = np.frombuffer(frame_bytes, np.float32)
             frame["flow"] = self.__decode_flow(flow)
             frame["sizes"]["flow"] = received
         else:
@@ -449,7 +456,7 @@ class Agent:
 
         if self.depth_frame_active:
             frame_bytes, received = self.receive_next_frame_view()
-            frame["depth"] = cv2.imdecode(self.__decode_image(frame_bytes), cv2.IMREAD_COLOR)
+            frame["depth"] = self.__decode_image(frame_bytes)
             frame["sizes"]["depth"] = received
         else:
             frame["sizes"]["depth"] = 0
@@ -552,7 +559,7 @@ class Agent:
         self.__send_vector3(rotation)
         result = self.__receive_string()
         if result != "ok":
-            print("Error setting rotation")
+            print(f"Error setting rotation: {result}")
 
     def toggle_follow(self):
         """
@@ -838,22 +845,26 @@ class Agent:
     # region Data decoding and image manipulation
 
     @staticmethod
-    def __decode_image(image_bytes, dtype=np.uint8) -> np.ndarray:
+    def __decode_image(image_bytes) -> np.ndarray:
         """
         Decode an image from the given bytes representation to a numpy array.
 
         :param image_bytes: the bytes representation of an image
-        :return: the numpy array representation of an image
+        :return: a PIL Image made from those bytes
         """
-        return np.frombuffer(image_bytes, dtype)
 
-    def __decode_category(self, input_base64) -> np.ndarray:
+        bytes_buffer = io.BytesIO()
+        bytes_buffer.write(image_bytes)
+        pil_img = Image.open(bytes_buffer)
+        return np.asarray(pil_img)
+
+    def __decode_category(self, frame_bytes) -> np.ndarray:
         """
         Decode the category supervisions from the given base64 representation to a numpy array.
         :param input_base64: the base64 representation of categories
         :return: the numpy array containing the category supervisions
         """
-        cat_frame = self.__decode_image(input_base64)
+        cat_frame = np.frombuffer(frame_bytes, dtype=np.uint8)
         cat_frame = np.reshape(cat_frame, (self.height, self.width, -1))
         cat_frame = np.flipud(cat_frame)
         cat_frame = np.reshape(cat_frame, (-1))
