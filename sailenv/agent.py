@@ -73,10 +73,6 @@ class Agent:
     sizeof_double = 8  # sizeof(double) in C#
     # Note: boolean values are like integers
 
-    # TODO: summary
-    """
-    TODO: summary ??? Maybe some more check to avoid connection errors?
-    """
     def __init__(self,
                  main_frame_active: bool = True,
                  object_frame_active: bool = True,
@@ -621,10 +617,9 @@ class Agent:
 
     def send_obj_zip(self, file: Union[str, BinaryIO], filename=None):
         """
-        TODO
+        Send a .zip file with a .obj model inside to the Unity server. It also returns the path of the .zip file.
         """
         self.__send_command(CommandsBytes.SEND_OBJ_ZIP)
-
         if isinstance(file, str):
             filename = os.path.basename(file)
             with open(file, "rb") as file:
@@ -633,15 +628,16 @@ class Agent:
             if filename is None:
                 raise ValueError("filename cannot be None if an open file is provided")
             self.__send_file(file, filename)
-
-        # after sending the object, we receive the path where the file was stored
-
+        # After sending the object, we receive the path where the file was stored
         save_path = self.__receive_string()
         return save_path
 
     def change_main_camera_clear_flags(self, r: int, g: int, b: int):
         """
-        TODO
+        Change the camera clear flags (a solid color) on the Unity agent main camera.
+        :param r: the red channel of the solid color
+        :param g: the green channel of the solid color
+        :param b: the blue channel of the solid color
         Note: sending negative values for at least one channel means to use the skybox
         """
         self.__send_command(CommandsBytes.SET_MAIN_CAMERA_CLEAR_FLAGS)
@@ -655,7 +651,9 @@ class Agent:
 
     def get_light_color(self, light_name: str):
         """
-        TODO
+        Get the (R,G,B) color tuple of the given light.
+        :param light_name: the name of the light
+        :return: a tuple (R,G,B) defining the color or None if the light name is not defined
         """
         self.__send_command(CommandsBytes.GET_LIGHT_COLOR)
         # Send the name
@@ -672,7 +670,11 @@ class Agent:
 
     def set_light_color(self, light_name: str, r: int, g: int, b: int):
         """
-        TODO
+        Set the (R,G,B) color tuple of the given light.
+        :param light_name: the name of the light
+        :param r: the red channel of the light color
+        :param g: the green channel of the light color
+        :param b: the blue channel of the light color
         """
         self.__send_command(CommandsBytes.SET_LIGHT_COLOR)
         # Send the name
@@ -687,7 +689,9 @@ class Agent:
 
     def get_light_position(self, light_name: str):
         """
-        TODO
+        Get the Vector3 position of the given light.
+        :param light_name: the name of the light
+        :return: a Vector3 defining the position or None if the light name is not defined
         """
         self.__send_command(CommandsBytes.GET_LIGHT_POSITION)
         # Send the name
@@ -702,7 +706,9 @@ class Agent:
 
     def set_light_position(self, light_name: str, position):
         """
-        TODO
+        Set the Vector3 position of the given light. It has meaning only for non-directional lights.
+        :param light_name: the name of the light
+        :param position: the Vector3 position of the light
         """
         self.__send_command(CommandsBytes.SET_LIGHT_POSITION)
         # Send the name
@@ -715,7 +721,9 @@ class Agent:
 
     def get_light_direction(self, light_name: str):
         """
-        TODO
+        Get the Vector3 direction of the given light. It has meaning only for non-point lights.
+        :param light_name: the name of the light
+        :return: a Vector3 defining the direction or None if the light name is not defined
         """
         self.__send_command(CommandsBytes.GET_LIGHT_DIRECTION)
         # Send the name
@@ -730,7 +738,9 @@ class Agent:
 
     def set_light_direction(self, light_name: str, direction):
         """
-        TODO
+        Set the Vector3 direction of the given light. It has meaning only for non-point lights.
+        :param light_name: the name of the light
+        :param direction: the Vector3 direction of the light
         """
         self.__send_command(CommandsBytes.SET_LIGHT_DIRECTION)
         # Send the name
@@ -743,7 +753,9 @@ class Agent:
 
     def get_light_intensity(self, light_name: str):
         """
-        TODO
+        Get the float intensity of the given light.
+        :param light_name: the name of the light
+        :return: a float defining the intensity or None if the light name is not defined
         """
         self.__send_command(CommandsBytes.GET_LIGHT_INTENSITY)
         # Send the name
@@ -758,7 +770,9 @@ class Agent:
 
     def set_light_intensity(self, light_name: str, intensity: float):
         """
-        TODO
+        Set the float intensity of the given light.
+        :param light_name: the name of the light
+        :param intensity: the intensity float of the light
         """
         self.__send_command(CommandsBytes.SET_LIGHT_INTENSITY)
         # Send the name
@@ -771,7 +785,9 @@ class Agent:
 
     def get_light_indirect_multiplier(self, light_name: str):
         """
-        TODO
+        Get the float indirect multiplier of the given light.
+        :param light_name: the name of the light
+        :return: a float defining the indirect multiplier or None if the light name is not defined
         """
         self.__send_command(CommandsBytes.GET_LIGHT_INDIRECT_MULTIPLIER)
         # Send the name
@@ -786,7 +802,9 @@ class Agent:
 
     def set_light_indirect_multiplier(self, light_name: str, indirect_multiplier: float):
         """
-        TODO
+        Set the float indirect multiplier of the given light.
+        :param light_name: the name of the light
+        :param indirect_multiplier: the indirect multiplier float of the light
         """
         self.__send_command(CommandsBytes.SET_LIGHT_INDIRECT_MULTIPLIER)
         # Send the name
@@ -799,7 +817,9 @@ class Agent:
 
     def get_light_type(self, light_name: str):
         """
-        TODO
+        Get the string type of the given light.
+        :param light_name: the name of the light
+        :return: a string defining the type or None if the light name is not defined
         """
         self.__send_command(CommandsBytes.GET_LIGHT_TYPE)
         # Send the name
@@ -812,7 +832,8 @@ class Agent:
 
     def get_ambient_light_color(self):
         """
-        TODO
+        Get the (R,G,B) color tuple of the scene ambient light. It only works if scene ambient light is set to solid color.
+        :return: a tuple (R,G,B) defining the ambient light color or None if the scene ambient light is not set to solid color.
         """
         self.__send_command(CommandsBytes.GET_AMBIENT_LIGHT_COLOR)
         # Get the result
@@ -828,7 +849,10 @@ class Agent:
 
     def set_ambient_light_color(self, r: int, g: int, b: int):
         """
-        TODO
+        Set the (R,G,B) color tuple of the scene ambient light.
+        :param r: the red channel of the scene ambient light color
+        :param g: the green channel of the scene ambient light color
+        :param b: the blue channel of the scene ambient light color
         """
         self.__send_command(CommandsBytes.SET_AMBIENT_LIGHT_COLOR)
         # Send the color
@@ -838,7 +862,6 @@ class Agent:
         result = self.__receive_string()
         if result != "ok":
             print("Error setting ambient light color")
-
 
     # endregion Public commands
 
