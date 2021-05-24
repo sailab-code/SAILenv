@@ -9,9 +9,10 @@
 # work. If not, see <https://en.wikipedia.org/wiki/MIT_License>.
 
 # Import packages
+import json
 import os
 from random import randint
-from typing import Union
+from typing import Union, Dict
 
 import numpy as np
 import socket
@@ -24,6 +25,10 @@ from PIL import Image
 
 # Import src
 from typing.io import BinaryIO
+
+from sailenv import Vector3
+from sailenv.dynamics import Dynamic
+from sailenv.generators.scenario import Scenario
 
 
 class FrameFlags(IntFlag):
@@ -64,6 +69,8 @@ class CommandsBytes:
     GET_LIGHTS_NAMES = b"\x19"
     GET_AMBIENT_LIGHT_COLOR = b"\x1A"
     SET_AMBIENT_LIGHT_COLOR = b"\x1B"
+    SPAWN_VIEW_FRUSTUM = b"\x1C"
+    LOAD_SCENARIO = b"\x1D"
 
 
 class Agent:
@@ -206,6 +213,14 @@ class Agent:
         data = string.encode(str_format)
         self.socket.send(data)
 
+    def __send_json(self, dictionary: Dict):
+        """
+        Sends a dictionary as JSON
+        :param dictionary: the dict object to send as json
+        """
+        json_str = json.dumps(dictionary)
+        self.__send_string(json_str)
+
     def __receive_bool(self):
         """
         Receives a boolean.
@@ -321,7 +336,7 @@ class Agent:
 
     def __receive_scenes(self):
         """
-        Receives a list of available scene names.
+        Receives a list of available generators names.
         """
         scenes_number = self.__receive_int()
         scenes = list()
@@ -464,15 +479,15 @@ class Agent:
 
     def change_scene(self, scene_name):
         """
-        Sends a change scene command.
-        :param scene_name: the name of the scene to load into the Unity server
+        Sends a change generators command.
+        :param scene_name: the name of the generators to load into the Unity server
         """
         self.__send_command(CommandsBytes.CHANGE_SCENE)
         self.__send_string(scene_name)
 
         result = self.__receive_string()
         if result != "ok":
-            print(f"Cannot change scene! error = {result}")
+            print(f"Cannot change generators! error = {result}")
             return
 
         self.__receive_categories()
@@ -566,16 +581,21 @@ class Agent:
         if result != "ok":
             print("Error toggling follow")
 
+
+
     def spawn_object(self, name,
-                     position=(0, 0, 0), rotation=(0, 0, 0),
-                     remove_dynamics=True, scale=(1, 1, 1), use_parent=True):
+                     position: Vector3 = Vector3(0, 0, 0), rotation: Vector3 = Vector3(0, 0, 0),
+                     dynamic: Dynamic = None,
+                     remove_default_dynamics=True,
+                     scale=(1, 1, 1), use_parent=True):
         """
         Spawn an object into the Unity server by sending a spawn object command. Note: this also adds the spawned object,
         if actually spawned, to the spawned object idstr names table of the agent.
         :param name: the name of the object to spawn
         :param position: the vector3 (of floats) position where to spawn
-        :param rotation: the vector3 (of floats) rotation (euler angles) at which to spawn
-        :param remove_dynamics: a flag to remove or not the dynamics (gravity, movement, etc) from the spawned object
+        :param rotation: the vector3 (of floats) rotation (euler angles) at which to
+        :param dynamic: The optional description of the dynamic that must be applied to the object
+        :param remove_default_dynamics: a flag to remove or not the dynamics (gravity, movement, etc) from the spawned object
         :param scale: the vector3 (of floats) scale of the object once spawned
         :param use_parent: a flag to spawn the object a child of the default parent (as defined in the Unity server)
         :return: a string empty if the object is not spawned, containing the object unique instance id otherwise
@@ -584,9 +604,17 @@ class Agent:
         self.__send_string(name)
         self.__send_vector3(position)
         self.__send_vector3(rotation)
-        self.__send_bool(remove_dynamics)
+        self.__send_bool(remove_default_dynamics)
         self.__send_vector3(scale)
         self.__send_bool(use_parent)
+
+        if dynamic is None:
+            self.__send_bool(False)  # don't use custom dynamics
+        else:
+            self.__send_bool(True)  # use custom dynamics
+            self.__send_string(dynamic.get_type())  # send type of dynamic
+            self.__send_json(dynamic.asdict())  # send custom dynamic description as dict
+
         object_instance_id = self.__receive_string()
         # If the instance id is an empty string, the spawn is not successful
         if not object_instance_id:
@@ -832,8 +860,8 @@ class Agent:
 
     def get_ambient_light_color(self):
         """
-        Get the (R,G,B) color tuple of the scene ambient light. It only works if scene ambient light is set to solid color.
-        :return: a tuple (R,G,B) defining the ambient light color or None if the scene ambient light is not set to solid color.
+        Get the (R,G,B) color tuple of the generators ambient light. It only works if generators ambient light is set to solid color.
+        :return: a tuple (R,G,B) defining the ambient light color or None if the generators ambient light is not set to solid color.
         """
         self.__send_command(CommandsBytes.GET_AMBIENT_LIGHT_COLOR)
         # Get the result
@@ -849,10 +877,10 @@ class Agent:
 
     def set_ambient_light_color(self, r: int, g: int, b: int):
         """
-        Set the (R,G,B) color tuple of the scene ambient light.
-        :param r: the red channel of the scene ambient light color
-        :param g: the green channel of the scene ambient light color
-        :param b: the blue channel of the scene ambient light color
+        Set the (R,G,B) color tuple of the generators ambient light.
+        :param r: the red channel of the generators ambient light color
+        :param g: the green channel of the generators ambient light color
+        :param b: the blue channel of the generators ambient light color
         """
         self.__send_command(CommandsBytes.SET_AMBIENT_LIGHT_COLOR)
         # Send the color
@@ -862,6 +890,15 @@ class Agent:
         result = self.__receive_string()
         if result != "ok":
             print("Error setting ambient light color")
+
+    def spawn_collidable_view_frustum(self):
+        self.__send_command(CommandsBytes.SPAWN_VIEW_FRUSTUM)
+
+    def load_scenario(self, scenario: Scenario):
+        self.__send_command(CommandsBytes.LOAD_SCENARIO)
+        scenarioJson = json.dumps(scenario.asdict())
+        self.__send_string(scenarioJson)
+
 
     # endregion Public commands
 
