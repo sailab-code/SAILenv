@@ -542,7 +542,7 @@ class Agent:
         """
         self.__send_command(CommandsBytes.GET_POSITION)
         position = self.__receive_vector3()
-        return position
+        return Vector3(*position)
 
     def get_rotation(self):
         """
@@ -551,7 +551,7 @@ class Agent:
         """
         self.__send_command(CommandsBytes.GET_ROTATION)
         rotation = self.__receive_vector3()
-        return rotation
+        return Vector3(*rotation)
 
     def set_position(self, position):
         """

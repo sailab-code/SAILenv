@@ -19,7 +19,7 @@ class Timings(BaseDataclass):
 
 @dataclass
 class AllTogetherTimings(Timings):
-    wait_time: float
+    wait_time: float = 1.0
 
     @staticmethod
     def get_type():
