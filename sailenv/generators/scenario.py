@@ -12,3 +12,7 @@ class Scenario(BaseDataclass):
     objects: List[Object]
     timings: Timings = field(default_factory=AllTogetherTimings)
     spawn_frustum: bool = False
+
+    @property
+    def n_objects(self):
+        return len(self.objects)

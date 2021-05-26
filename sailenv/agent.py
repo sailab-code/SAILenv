@@ -899,6 +899,14 @@ class Agent:
         scenarioJson = json.dumps(scenario.asdict())
         self.__send_string(scenarioJson)
 
+        # receive the ids of spawned objects
+        ids = []
+        for i in range(0, scenario.n_objects):
+            ids.append((self.__receive_string(), scenario.objects[i].id))
+
+        self.spawned_objects_idstr_names_table.update(ids)
+        return ids
+
 
     # endregion Public commands
 

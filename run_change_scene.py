@@ -79,9 +79,14 @@ if __name__ == '__main__':
 
         scenario = Scenario(scene, objects, timings2, True)
 
-        agent.load_scenario(scenario)
+        spawned_ids = agent.load_scenario(scenario)
+
+        print(spawned_ids)
 
         input()
+
+        agent.despawn_object(spawned_ids[1][0])
+
     finally:
         print(f"Closing agent {agent.id}")
         agent.delete()
