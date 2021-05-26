@@ -490,6 +490,9 @@ class Agent:
             print(f"Cannot change generators! error = {result}")
             return
 
+        self.__receive_scene_info()
+
+    def __receive_scene_info(self):
         self.__receive_categories()
         self.__receive_spawnable_objects_names()
         self.__receive_lights_names()
@@ -905,6 +908,9 @@ class Agent:
             ids.append((self.__receive_string(), scenario.objects[i].id))
 
         self.spawned_objects_idstr_names_table.update(ids)
+
+        self.__receive_scene_info()
+
         return ids
 
 
