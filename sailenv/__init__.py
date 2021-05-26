@@ -20,3 +20,11 @@ class Vector3:
     @staticmethod
     def from_tuple(tuple: Tuple[float, float, float]):
         return Vector3(*tuple)
+
+    def __mul__(self, other):
+        if isinstance(other, int) or isinstance(other, float):
+            return Vector3(self.x * other, self.y * other, self.z * other)
+        elif isinstance(other, Vector3):
+            return self.x * other.x + self.y * other.y + self.z * other.z
+        else:
+            raise ValueError("Invalid multiplication")
