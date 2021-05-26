@@ -7,3 +7,5 @@ docker-env/dev/build
 build/
 dist/
 *.egg-info
+
+out*

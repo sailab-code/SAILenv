@@ -10,7 +10,8 @@
 
 
 # Import packages
-
+import os
+import shutil
 import time
 import numpy as np
 import cv2
@@ -75,7 +76,9 @@ def create_windows(agent: Agent):
             windows[view] = window
 
 
-
+def get_img(array):
+    arr_img = np.uint8(array * 255)
+    return Image.fromarray(arr_img[:,:,::-1])
 
 
 # host = "bronte.diism.unisi.it"
@@ -93,20 +96,24 @@ if __name__ == '__main__':
     print(f"Agent registered with ID: {agent.id}")
     last_unity_time: float = 0.0
 
-
     agent.set_position((-1.5, 2., 0.5))
     agent.set_rotation((18.0, -12., 0.))
 
     scenario = all_together(agent.get_position())
     agent.load_scenario(scenario)
-    #agent.change_main_camera_clear_flags(127, 127, 127)
-
+    # agent.change_main_camera_clear_flags(127, 127, 127)
 
     print(f"Available categories: {agent.categories}")
+
+    out_dir = "./out_room02/trail"
+    if os.path.exists(out_dir):
+        shutil.rmtree(out_dir)
+    os.makedirs(out_dir)
 
     # print(agent.get_resolution())
     try:
         print("Press ESC to close")
+        frame_n = 0
         while True:
             start_real_time = time.time()
             start_unity_time = last_unity_time
@@ -115,11 +122,13 @@ if __name__ == '__main__':
             frame = agent.get_frame()
             step_get = time.time() - start_get
 
-            print(f"get frame in seconds: {step_get}, fps: {1/step_get}")
+            print(f"get frame in seconds: {step_get}, fps: {1 / step_get}")
 
             if frame["main"] is not None:
                 main_img = cv2.cvtColor(frame["main"], cv2.COLOR_RGB2BGR)
-                cv2.imshow("PBR", main_img)
+                # cv2.imshow("PBR", main_img)
+                pil_mimg = get_img(main_img)
+                pil_mimg.save(f"{out_dir}/{frame_n:03}_main.png")
 
             if frame["category"] is not None:
                 start_get_cat = time.time()
@@ -128,7 +137,7 @@ if __name__ == '__main__':
                 k = np.array(list(agent.cat_colors.keys()))
                 v = np.array(list(agent.cat_colors.values()))
 
-                mapping_ar = np.zeros((np.maximum(np.max(k)+1, 256), 3), dtype=v.dtype)
+                mapping_ar = np.zeros((np.maximum(np.max(k) + 1, 256), 3), dtype=v.dtype)
                 mapping_ar[k] = v
                 out = mapping_ar[frame["category"]]
 
@@ -150,23 +159,29 @@ if __name__ == '__main__':
 
                 step_get_cat = time.time() - start_get_cat
                 print(f"Plot category in : {step_get_cat}")
-                cv2.imshow("Category", cat_img)
+                pil_mimg = Image.fromarray(cat_img)
+                pil_mimg.save(f"{out_dir}/{frame_n:03}_cat.png")
+                # cv2.imshow("Category", cat_img)
 
             if frame["object"] is not None:
                 obj_img = decode_image(frame["object"])
-                cv2.imshow("Object ID", obj_img)
+                # cv2.imshow("Object ID", obj_img)
 
             if frame["flow"] is not None:
                 flow = frame["flow"]
                 flow_img = draw_flow_map(flow)
-                cv2.imshow("Optical Flow", flow_img)
+                #pil_mimg = get_img(flow_img)
+                #pil_mimg.save(f"{out_dir}/{frame_n:03}_flow.png")
+                cv2.imwrite(f"{out_dir}/{frame_n:03}_flow.png", flow_img)
+                #cv2.imshow("Optical Flow", flow_img)
 
             if frame["depth"] is not None:
                 depth = frame["depth"]
-                cv2.imshow("Depth", depth)
+                # cv2.imshow("Depth", depth)
 
             key = cv2.waitKey(1)
             # print(f"FPS: {1/(time.time() - start_real_time)}")
+            frame_n += 1
             if key == 27:  # ESC Pressed
                 break
     finally:

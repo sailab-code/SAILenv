@@ -10,7 +10,8 @@
 
 
 # Import packages
-
+import os
+import shutil
 import time
 import numpy as np
 import cv2
@@ -77,6 +78,10 @@ def create_windows(agent: Agent):
 
 
 
+def get_img(array):
+    arr_img = np.uint8(array * 255)
+    return Image.fromarray(arr_img[:,:,::-1])
+
 
 # host = "bronte.diism.unisi.it"
 host = "127.0.0.1"
@@ -114,9 +119,15 @@ if __name__ == '__main__':
 
     print(f"Available categories: {agent.categories}")
 
+    out_dir = "./out_empty/trail"
+    if os.path.exists(out_dir):
+        shutil.rmtree(out_dir)
+    os.makedirs(out_dir)
+
     # print(agent.get_resolution())
     try:
         print("Press ESC to close")
+        frame_n = 0
         while True:
             start_real_time = time.time()
             start_unity_time = last_unity_time
@@ -129,6 +140,10 @@ if __name__ == '__main__':
 
             if frame["main"] is not None:
                 main_img = cv2.cvtColor(frame["main"], cv2.COLOR_RGB2BGR)
+
+                pil_mimg = get_img(main_img)
+                pil_mimg.save(f"{out_dir}/{frame_n:03}_main.png")
+
                 cv2.imshow("PBR", main_img)
 
             if frame["category"] is not None:
@@ -169,12 +184,14 @@ if __name__ == '__main__':
             if frame["flow"] is not None:
                 flow = frame["flow"]
                 flow_img = draw_flow_map(flow)
+                cv2.imwrite(f"{out_dir}/{frame_n:03}_flow.png", flow_img)
                 cv2.imshow("Optical Flow", flow_img)
 
             if frame["depth"] is not None:
                 depth = frame["depth"]
                 cv2.imshow("Depth", depth)
 
+            frame_n += 1
             key = cv2.waitKey(1)
             # print(f"FPS: {1/(time.time() - start_real_time)}")
             if key == 27:  # ESC Pressed

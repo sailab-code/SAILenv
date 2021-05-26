@@ -16,10 +16,10 @@ def flying_cylinder_empty(agent_pos):
 
     waypoints = [Waypoint(offset.position + agent_pos, offset.rotation) for offset in waypoints_offsets]
 
-    dynamic1 = CatmullWaypoints(waypoints=waypoints)
+    dynamic1 = CatmullWaypoints(waypoints=waypoints, total_time=10.)
 
     objects = [
-        Object("sphere", "Cylinder", Vector3(0, 0, 2), Vector3(0, 0, 0), dynamic1),
+        Object("sphere", "Cylinder Trail", Vector3(0, 0, 2), Vector3(0, 0, 0), dynamic1),
     ]
 
     return Scenario("solid_benchmark/scene", objects)
@@ -32,9 +32,16 @@ def all_together(agent_pos):
 
     objects = [
         Object("chair", "Chair 01", agent_pos + Vector3(0.5, 0., 2.), Vector3(0., 0., 0.), dynamic1, frustum_limited=True),
-        Object("pillow", "Pillow 01", agent_pos + Vector3(0., -0.5        , 2.), Vector3(0., 0., 0.), dynamic2, frustum_limited=True),
+        Object("pillow", "Pillow 01", agent_pos + Vector3(0., -0.5, 2.), Vector3(0., 0., 0.), dynamic2, frustum_limited=True),
         Object("dish", "Dish 01", agent_pos + Vector3(-0.5, 0.5, 2.), Vector3(0., 0., 0.), dynamic3, frustum_limited=True),
+
+        # Object("chair", "Chair 01 Trail", agent_pos + Vector3(0.5, 0., 2.), Vector3(0., 0., 0.), dynamic1,
+        #        frustum_limited=True),
+        # Object("pillow", "Pillow 01 Trail", agent_pos + Vector3(0., -0.5, 2.), Vector3(0., 0., 0.), dynamic2,
+        #        frustum_limited=True),
+        # Object("dish", "Dish 01 Trail", agent_pos + Vector3(-0.5, 0.5, 2.), Vector3(0., 0., 0.), dynamic3,
+        #        frustum_limited=True),
     ]
 
     timings = AllTogetherTimings(0.75)
-    return Scenario("room_02/scene", objects, timings, Frustum(True, 10.))
+    return Scenario("room_02/scene", objects, timings, Frustum(True, 2.5))
