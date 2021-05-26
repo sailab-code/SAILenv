@@ -12,7 +12,7 @@ class Object(BaseDataclass):
     prefab: str
     position: Vector3
     rotation: Vector3
-    dynamic: Dynamic
+    dynamic: Dynamic = None
     frustum_limited: bool = True
 
     def asdict(self):
