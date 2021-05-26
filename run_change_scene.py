@@ -45,10 +45,6 @@ if __name__ == '__main__':
 
         # agent.spawn_collidable_view_frustum()
 
-        agent_pos = agent.get_position()
-
-        object_pos = agent_pos + (0, 0, 1)
-
         waypoints = []
         for i in range(4):
             for j in range(3):
@@ -64,8 +60,8 @@ if __name__ == '__main__':
         dynamic3 = UniformMovementRandomBounce(seed=32, start_direction=Vector3(0, 5, 2))
 
         objects = [
-            Object("cylinder", "Cylinder", Vector3(0, 0, 0), Vector3(0, 0, 0), dynamic1, frustum_limited=False),
-            Object("cylinder2", "Cylinder", Vector3(0, 0, 2), Vector3(0, 0, 0), dynamic2, frustum_limited=False),
+            Object("cylinder", "Cylinder Trail", Vector3(0, 0, 0), Vector3(0, 0, 0), dynamic1, frustum_limited=False),
+            Object("cube", "Cube Trail", Vector3(0, 0, 2), Vector3(0, 0, 0), dynamic2, frustum_limited=False),
             # Object("sphere", "Cylinder", Vector3(0, 0, 2), Vector3(0, 0, 0), dynamic3),
         ]
 
@@ -84,8 +80,6 @@ if __name__ == '__main__':
         print(spawned_ids)
 
         input()
-
-        agent.despawn_object(spawned_ids[1][0])
 
     finally:
         print(f"Closing agent {agent.id}")
