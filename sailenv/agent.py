@@ -71,6 +71,7 @@ class CommandsBytes:
     SET_AMBIENT_LIGHT_COLOR = b"\x1B"
     SPAWN_VIEW_FRUSTUM = b"\x1C"
     LOAD_SCENARIO = b"\x1D"
+    MOVE_OBJECT = b"\x1E"
 
 
 class Agent:
@@ -590,6 +591,7 @@ class Agent:
                      position: Vector3 = Vector3(0, 0, 0), rotation: Vector3 = Vector3(0, 0, 0),
                      dynamic: Dynamic = None,
                      remove_default_dynamics=True,
+                     frustum_limited=True,
                      scale=(1, 1, 1), use_parent=True):
         """
         Spawn an object into the Unity server by sending a spawn object command. Note: this also adds the spawned object,
@@ -610,6 +612,7 @@ class Agent:
         self.__send_bool(remove_default_dynamics)
         self.__send_vector3(scale)
         self.__send_bool(use_parent)
+        self.__send_bool(frustum_limited)
 
         if dynamic is None:
             self.__send_bool(False)  # don't use custom dynamics
@@ -645,6 +648,27 @@ class Agent:
             return
         # Remove the entry from the dictionary
         self.spawned_objects_idstr_names_table.pop(idstr)
+
+    def move_object(self, idstr, position: Vector3 = Vector3(0, 0, 0), rotation: Vector3 = Vector3(0, 0, 0)):
+        """
+        Moves an object identified by given instance id
+        :param rotation:
+        :param position:
+        :param idstr:
+        :return:
+        """
+
+        id_number = int(idstr)
+        self.__send_command(CommandsBytes.MOVE_OBJECT)
+        self.__send_int(id_number)
+
+        self.__send_vector3(position)
+        self.__send_vector3(rotation)
+
+        result = self.__receive_string()
+        if result != "ok":
+            print("Error moving object with id " + idstr)
+            return
 
     def send_obj_zip(self, file: Union[str, BinaryIO], filename=None):
         """
