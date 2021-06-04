@@ -18,8 +18,14 @@ import cv2
 from PIL import Image
 
 # Import src
-from example_scenarios import flying_cylinder_empty
+from example_scenarios import flying_cylinder_empty, all_together
+from sailenv import Vector3
 from sailenv.agent import Agent
+from sailenv.dynamics.uniform_movement_random_bounce import UniformMovementRandomBounce
+from sailenv.dynamics.waypoints import Waypoint, CatmullWaypoints, LinearWaypoints
+from sailenv.generators.object import Object
+from sailenv.generators.scenario import Scenario, Frustum
+from sailenv.generators.timings import AllTogetherTimings, WaitUntilCompleteTimings, DictTimings
 
 frames: int = 1000
 
@@ -64,7 +70,6 @@ def get_img(array):
     arr_img = np.uint8(array * 255)
     return Image.fromarray(arr_img[:,:,::-1])
 
-
 host = "127.0.0.1"
 if __name__ == '__main__':
     print("Generating agent...")
@@ -78,28 +83,34 @@ if __name__ == '__main__':
     print(f"Agent registered with ID: {agent.id}")
     last_unity_time: float = 0.0
 
-    print(f"Available scenes: {agent.scenes}")
+    scene = "room_01/scene"
 
-    scene = "solid_benchmark/scene"
+    waypoints = [
+        Waypoint(Vector3(0.5, 1.4, 0.5), Vector3(0., 0., 0.)),
+        Waypoint(Vector3(0.3, 1., -1.), Vector3(90., 0., 0.)),
+        Waypoint(Vector3(-0.4, 0.6, 0.5), Vector3(90., 90., 0.)),
+        Waypoint(Vector3(-1.5, 1.8, -1.0), Vector3(90., 90., 90.)),
+        Waypoint(Vector3(0.5, 1.4, -1.0), Vector3(90., 90., 180.))
+    ]
 
-    print(f"Changing scene to {scene}")
-    """agent.change_scene(scene)
-    agent.toggle_follow()
+    agent_pos = Vector3(-1.3, 2., 1.5)
+    agent.set_position(agent_pos)
+    agent.set_rotation(Vector3(22., 144., 0))
 
-    agent.spawn_collidable_view_frustum()
+    dynamic = CatmullWaypoints(waypoints=waypoints)
 
-    agent.spawn_object('Cylinder', dynamic=UniformMovementRandomBounce(start_direction=(0,1,0), seed=32))"""
+    objects = [
+        Object("racket", "Tennis Racket 01", Vector3(0.5, 1.4, 0.5), Vector3(0., 0., 0.), dynamic)
+    ]
 
-    scenario = flying_cylinder_empty(agent.get_position())
+    timings = WaitUntilCompleteTimings(1.5)
+
+    scenario = Scenario(scene, objects, timings, Frustum(False, 20.))
     agent.load_scenario(scenario)
-    agent.change_main_camera_clear_flags(127, 127, 127)
-
-    agent.set_position((9.0, 2.7, 3.))
-    agent.set_rotation((14.0, -90., 0.))
 
     print(f"Available categories: {agent.categories}")
 
-    out_dir = "./out_empty/trail"
+    out_dir = "./out_room01/trail"
     if os.path.exists(out_dir):
         shutil.rmtree(out_dir)
     os.makedirs(out_dir)
@@ -115,14 +126,12 @@ if __name__ == '__main__':
             frame = agent.get_frame()
             step_get = time.time() - start_get
 
-            print(f"get frame in seconds: {step_get}, fps: {1/step_get}")
+            print(f"get frame in seconds: {step_get}, fps: {1 / step_get}")
 
             if frame["main"] is not None:
                 main_img = cv2.cvtColor(frame["main"], cv2.COLOR_RGB2BGR)
-
                 pil_mimg = get_img(main_img)
                 pil_mimg.save(f"{out_dir}/{frame_n:03}_main.png")
-                cv2.imshow("PBR", main_img)
 
             if frame["category"] is not None:
                 start_get_cat = time.time()
@@ -130,9 +139,10 @@ if __name__ == '__main__':
                 k = np.array(list(agent.cat_colors.keys()))
                 v = np.array(list(agent.cat_colors.values()))
 
-                mapping_ar = np.zeros((np.maximum(np.max(k)+1, 256), 3), dtype=v.dtype)
+                mapping_ar = np.zeros((np.maximum(np.max(k) + 1, 256), 3), dtype=v.dtype)
                 mapping_ar[k] = v
                 out = mapping_ar[frame["category"]]
+
                 cat_img = np.reshape(out, (agent.height, agent.width, 3))
                 cat_img = cat_img.astype(np.uint8)
 
@@ -143,20 +153,16 @@ if __name__ == '__main__':
 
                 step_get_cat = time.time() - start_get_cat
                 print(f"Plot category in : {step_get_cat}")
-                cv2.imshow("Category", cat_img)
+                pil_mimg = Image.fromarray(cat_img)
+                pil_mimg.save(f"{out_dir}/{frame_n:03}_cat.png")
 
             if frame["flow"] is not None:
                 flow = frame["flow"]
                 flow_img = draw_flow_map(flow)
                 cv2.imwrite(f"{out_dir}/{frame_n:03}_flow.png", flow_img)
-                cv2.imshow("Optical Flow", flow_img)
 
-            if frame["depth"] is not None:
-                depth = frame["depth"]
-                cv2.imshow("Depth", depth)
-
-            frame_n += 1
             key = cv2.waitKey(1)
+            frame_n += 1
             if key == 27:  # ESC Pressed
                 break
     finally:

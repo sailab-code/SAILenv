@@ -5,6 +5,7 @@ from sailenv.generators.object import Object
 from sailenv.generators.scenario import Scenario, Frustum
 from sailenv.generators.timings import AllTogetherTimings, WaitUntilCompleteTimings, DictTimings
 
+
 def flying_cylinder_empty(agent_pos):
     waypoints_offsets = [
         Waypoint(Vector3(0., 0., 4.), Vector3(0., 0., 0.)),
@@ -19,10 +20,10 @@ def flying_cylinder_empty(agent_pos):
     dynamic1 = CatmullWaypoints(waypoints=waypoints, total_time=10.)
 
     objects = [
-        Object("sphere", "Cylinder Trail", Vector3(0, 0, 2), Vector3(0, 0, 0), dynamic1),
+        Object("sphere", "Cylinder", Vector3(0, 0, 2), Vector3(0, 0, 0), dynamic1),
     ]
 
-    return Scenario("solid_benchmark/scene", objects)
+    return Scenario("object_view/scene", objects)
 
 
 def all_together(agent_pos):
@@ -34,13 +35,6 @@ def all_together(agent_pos):
         Object("chair", "Chair 01", agent_pos + Vector3(0.5, 0., 2.), Vector3(0., 0., 0.), dynamic1, frustum_limited=True),
         Object("pillow", "Pillow 01", agent_pos + Vector3(0., -0.5, 2.), Vector3(0., 0., 0.), dynamic2, frustum_limited=True),
         Object("dish", "Dish 01", agent_pos + Vector3(-0.5, 0.5, 2.), Vector3(0., 0., 0.), dynamic3, frustum_limited=True),
-
-        # Object("chair", "Chair 01 Trail", agent_pos + Vector3(0.5, 0., 2.), Vector3(0., 0., 0.), dynamic1,
-        #        frustum_limited=True),
-        # Object("pillow", "Pillow 01 Trail", agent_pos + Vector3(0., -0.5, 2.), Vector3(0., 0., 0.), dynamic2,
-        #        frustum_limited=True),
-        # Object("dish", "Dish 01 Trail", agent_pos + Vector3(-0.5, 0.5, 2.), Vector3(0., 0., 0.), dynamic3,
-        #        frustum_limited=True),
     ]
 
     timings = AllTogetherTimings(0.75)
