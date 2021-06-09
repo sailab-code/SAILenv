@@ -83,12 +83,8 @@ if __name__ == '__main__':
 
     scenario = all_together(agent.get_position())
     agent.load_scenario(scenario)
-    print(f"Available categories: {agent.categories}")
 
-    out_dir = "./out_room02/trail"
-    if os.path.exists(out_dir):
-        shutil.rmtree(out_dir)
-    os.makedirs(out_dir)
+    print(f"Available categories: {agent.categories}")
 
     try:
         print("Press ESC to close")
@@ -105,8 +101,7 @@ if __name__ == '__main__':
 
             if frame["main"] is not None:
                 main_img = cv2.cvtColor(frame["main"], cv2.COLOR_RGB2BGR)
-                pil_mimg = get_img(main_img)
-                pil_mimg.save(f"{out_dir}/{frame_n:03}_main.png")
+                cv2.imshow("PBR", main_img)
 
             if frame["category"] is not None:
                 start_get_cat = time.time()
@@ -117,7 +112,6 @@ if __name__ == '__main__':
                 mapping_ar = np.zeros((np.maximum(np.max(k) + 1, 256), 3), dtype=v.dtype)
                 mapping_ar[k] = v
                 out = mapping_ar[frame["category"]]
-
                 cat_img = np.reshape(out, (agent.height, agent.width, 3))
                 cat_img = cat_img.astype(np.uint8)
 
@@ -128,16 +122,15 @@ if __name__ == '__main__':
 
                 step_get_cat = time.time() - start_get_cat
                 print(f"Plot category in : {step_get_cat}")
-                pil_mimg = Image.fromarray(cat_img)
-                pil_mimg.save(f"{out_dir}/{frame_n:03}_cat.png")
+                cv2.imshow("Category", cat_img)
 
             if frame["flow"] is not None:
                 flow = frame["flow"]
                 flow_img = draw_flow_map(flow)
-                cv2.imwrite(f"{out_dir}/{frame_n:03}_flow.png", flow_img)
+                cv2.imshow("Optical Flow", flow_img)
 
-            key = cv2.waitKey(1)
             frame_n += 1
+            key = cv2.waitKey(1)
             if key == 27:  # ESC Pressed
                 break
     finally:
